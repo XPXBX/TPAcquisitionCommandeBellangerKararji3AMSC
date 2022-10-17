@@ -31,6 +31,16 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define UART_TX_BUFFER_SIZE 64
+#define UART_RX_BUFFER_SIZE 1
+#define CMD_BUFFER_SIZE 64
+#define MAX_ARGS 9
+// LF = line feed, saut de ligne
+#define ASCII_LF 0x0A
+// CR = carriage return, retour chariot
+#define ASCII_CR 0x0D
+// DEL = delete
+#define ASCII_DEL 0x7F
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -39,19 +49,29 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-UART_HandleTypeDef hlpuart1;
-
 TIM_HandleTypeDef htim1;
 
-/* USER CODE BEGIN PV */
+UART_HandleTypeDef huart2;
 
+/* USER CODE BEGIN PV */
+uint8_t prompt[]="user@Nucleo-STM32G431>>";
+uint8_t started[]=
+		"\r\n*-----------------------------*"
+		"\r\n| Welcome on Nucleo-STM32G431 |"
+		"\r\n*-----------------------------*"
+		"\r\n";
+uint8_t newline[]="\r\n";
+uint8_t cmdNotFound[]="Command not found\r\n";
+uint32_t uartRxReceived;
+uint8_t uartRxBuffer[UART_RX_BUFFER_SIZE];
+uint8_t uartTxBuffer[UART_TX_BUFFER_SIZE];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_LPUART1_UART_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -68,7 +88,12 @@ static void MX_TIM1_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	char	 	cmdBuffer[CMD_BUFFER_SIZE];
+	int 		idx_cmd;
+	char* 		argv[MAX_ARGS];
+	int		 	argc = 0;
+	char*		token;
+	int 		newCmdReady = 0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -89,16 +114,75 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_LPUART1_UART_Init();
   MX_TIM1_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  memset(argv,NULL,MAX_ARGS*sizeof(char*));
+  memset(cmdBuffer,NULL,CMD_BUFFER_SIZE*sizeof(char));
+  memset(uartRxBuffer,NULL,UART_RX_BUFFER_SIZE*sizeof(char));
+  memset(uartTxBuffer,NULL,UART_TX_BUFFER_SIZE*sizeof(char));
 
+  HAL_UART_Receive_IT(&huart2, uartRxBuffer, UART_RX_BUFFER_SIZE);
+  HAL_Delay(10);
+  HAL_UART_Transmit(&huart2, started, sizeof(started), HAL_MAX_DELAY);
+  HAL_UART_Transmit(&huart2, prompt, sizeof(prompt), HAL_MAX_DELAY);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  // uartRxReceived is set to 1 when a new character is received on uart 1
+	  	  if(uartRxReceived){
+	  		  switch(uartRxBuffer[0]){
+	  		  // Nouvelle ligne, instruction à traiter
+	  		  case ASCII_CR:
+	  			  HAL_UART_Transmit(&huart2, newline, sizeof(newline), HAL_MAX_DELAY);
+	  			  cmdBuffer[idx_cmd] = '\0';
+	  			  argc = 0;
+	  			  token = strtok(cmdBuffer, " ");
+	  			  while(token!=NULL){
+	  				  argv[argc++] = token;
+	  				  token = strtok(NULL, " ");
+	  			  }
+
+	  			  idx_cmd = 0;
+	  			  newCmdReady = 1;
+	  			  break;
+	  		  // Suppression du dernier caractère
+	  		  case ASCII_DEL:
+	  			  cmdBuffer[idx_cmd--] = '\0';
+	  			  HAL_UART_Transmit(&huart2, uartRxBuffer, UART_RX_BUFFER_SIZE, HAL_MAX_DELAY);
+	  			  break;
+	  	      // Nouveau caractère
+	  		  default:
+	  			  cmdBuffer[idx_cmd++] = uartRxBuffer[0];
+	  			  HAL_UART_Transmit(&huart2, uartRxBuffer, UART_RX_BUFFER_SIZE, HAL_MAX_DELAY);
+	  		  }
+	  		  uartRxReceived = 0;
+	  	  }
+
+	  	  if(newCmdReady){
+	  		  if(strcmp(argv[0],"set")==0){
+	  			  if(strcmp(argv[1],"PA5")==0){
+	  				  HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, atoi(argv[2]));
+	  				  sprintf(uartTxBuffer,"Switch on/off led : %d\r\n",atoi(argv[2]));
+	  				  HAL_UART_Transmit(&huart2, uartTxBuffer, 32, HAL_MAX_DELAY);
+	  			  }
+	  			  else{
+	  				  HAL_UART_Transmit(&huart2, cmdNotFound, sizeof(cmdNotFound), HAL_MAX_DELAY);
+	  			  }
+	  		  }
+	  		  else if(strcmp(argv[0],"get")==0)
+	  		  {
+	  			  HAL_UART_Transmit(&huart2, cmdNotFound, sizeof(cmdNotFound), HAL_MAX_DELAY);
+	  		  }
+	  		  else{
+	  			  HAL_UART_Transmit(&huart2, cmdNotFound, sizeof(cmdNotFound), HAL_MAX_DELAY);
+	  		  }
+	  			  HAL_UART_Transmit(&huart2, prompt, sizeof(prompt), HAL_MAX_DELAY);
+	  			  newCmdReady = 0;
+	  	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -150,53 +234,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-}
-
-/**
-  * @brief LPUART1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_LPUART1_UART_Init(void)
-{
-
-  /* USER CODE BEGIN LPUART1_Init 0 */
-
-  /* USER CODE END LPUART1_Init 0 */
-
-  /* USER CODE BEGIN LPUART1_Init 1 */
-
-  /* USER CODE END LPUART1_Init 1 */
-  hlpuart1.Instance = LPUART1;
-  hlpuart1.Init.BaudRate = 115200;
-  hlpuart1.Init.WordLength = UART_WORDLENGTH_8B;
-  hlpuart1.Init.StopBits = UART_STOPBITS_1;
-  hlpuart1.Init.Parity = UART_PARITY_NONE;
-  hlpuart1.Init.Mode = UART_MODE_TX_RX;
-  hlpuart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  hlpuart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  hlpuart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
-  hlpuart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&hlpuart1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_SetTxFifoThreshold(&hlpuart1, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_SetRxFifoThreshold(&hlpuart1, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_DisableFifoMode(&hlpuart1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN LPUART1_Init 2 */
-
-  /* USER CODE END LPUART1_Init 2 */
-
 }
 
 /**
@@ -276,6 +313,54 @@ static void MX_TIM1_Init(void)
 }
 
 /**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART2_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART2_Init 0 */
+
+  /* USER CODE END USART2_Init 0 */
+
+  /* USER CODE BEGIN USART2_Init 1 */
+
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(&huart2, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(&huart2, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_DisableFifoMode(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART2_Init 2 */
+
+  /* USER CODE END USART2_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -294,13 +379,13 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : B1_Pin */
-  GPIO_InitStruct.Pin = B1_Pin;
+  /*Configure GPIO pin : BLUE_BUTTON_Pin */
+  GPIO_InitStruct.Pin = BLUE_BUTTON_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(BLUE_BUTTON_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : ISO_RESET_Pin */
   GPIO_InitStruct.Pin = ISO_RESET_Pin;
@@ -309,12 +394,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(ISO_RESET_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : LD2_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin;
+  /*Configure GPIO pin : GREEN_LED_Pin */
+  GPIO_InitStruct.Pin = GREEN_LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GREEN_LED_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
@@ -323,7 +408,10 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart){
+	uartRxReceived = 1;
+	HAL_UART_Receive_IT(&huart2, uartRxBuffer, UART_RX_BUFFER_SIZE);
+}
 /* USER CODE END 4 */
 
 /**
