@@ -130,6 +130,11 @@ int main(void)
   HAL_Delay(10);
   HAL_UART_Transmit(&huart2, started, sizeof(started), HAL_MAX_DELAY);
   HAL_UART_Transmit(&huart2, prompt, sizeof(prompt), HAL_MAX_DELAY);
+  //demarrage des PWM attention fonction differente pour complementaire
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
+  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -176,7 +181,31 @@ int main(void)
 	  			  else{
 	  				  HAL_UART_Transmit(&huart2, cmdNotFound, sizeof(cmdNotFound), HAL_MAX_DELAY);
 	  			  }
-	  		  }
+
+
+	  		    }
+
+	  	      else  if(strcmp(argv[0],"help")==0){
+	  	    	  sprintf(uartTxBuffer,"Commandes disponibles : help  pinout  start  stop %d\r\n",atoi(argv[2]));
+	  		  	  HAL_UART_Transmit(&huart2, uartTxBuffer, 60, HAL_MAX_DELAY);
+
+	  	      }
+	  	      else if(strcmp(argv[0],"pinout")==0){
+	  	    	  /*sprintf(uartTxBuffer,"Commandes disponibles : help  pinout  start  stop %d\r\n",atoi(argv[2]));
+	  	    	  HAL_UART_Transmit(&huart2, uartTxBuffer, 60, HAL_MAX_DELAY);*/
+
+
+	  	      }
+	  	      else if(strcmp(argv[0],"start")==0){
+
+	  	      }
+	  	      else if(strcmp(argv[0],"stop")==0){
+
+	  	      }
+	  	      else if(strcmp(argv[0],"alpha %d")==0){
+
+
+	  	      }
 	  		  else if(strcmp(argv[0],"get")==0)
 	  		  {
 	  			  HAL_UART_Transmit(&huart2, cmdNotFound, sizeof(cmdNotFound), HAL_MAX_DELAY);
@@ -252,6 +281,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 0 */
 
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
   TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
@@ -261,11 +291,20 @@ static void MX_TIM1_Init(void)
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
   htim1.Init.Prescaler = 0;
-  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 65535;
+  htim1.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED1;
+  htim1.Init.Period = 5313;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
   if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
   {
     Error_Handler();
@@ -278,7 +317,7 @@ static void MX_TIM1_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = 1328;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
@@ -288,14 +327,16 @@ static void MX_TIM1_Init(void)
   {
     Error_Handler();
   }
+  sConfigOC.Pulse = 2656;
   if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
   }
+  HAL_TIMEx_EnableDeadTimePreload(&htim1);
   sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
   sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
   sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
-  sBreakDeadTimeConfig.DeadTime = 0;
+  sBreakDeadTimeConfig.DeadTime = 12;
   sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
   sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
   sBreakDeadTimeConfig.BreakFilter = 0;
