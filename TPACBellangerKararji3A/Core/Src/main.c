@@ -62,7 +62,11 @@ uint8_t started[]=
 		"\r\n";
 uint8_t newline[]="\r\n";
 uint8_t cmdNotFound[]="Command not found\r\n";
-uint32_t uartRxReceived;
+uint8_t help[];
+uint8_t pinout[];
+uint8_t powerOn[];
+uint8_t powerOff[];
+uint32_t uartRxReceived=0;
 uint8_t uartRxBuffer[UART_RX_BUFFER_SIZE];
 uint8_t uartTxBuffer[UART_TX_BUFFER_SIZE];
 /* USER CODE END PV */
@@ -136,7 +140,7 @@ int main(void)
 	  	  if(uartRxReceived){
 	  		  switch(uartRxBuffer[0]){
 	  		  // Nouvelle ligne, instruction à traiter
-	  		  case ASCII_CR:
+	  		  case ASCII_CR: // 13 en ASCII
 	  			  HAL_UART_Transmit(&huart2, newline, sizeof(newline), HAL_MAX_DELAY);
 	  			  cmdBuffer[idx_cmd] = '\0';
 	  			  argc = 0;
@@ -150,7 +154,7 @@ int main(void)
 	  			  newCmdReady = 1;
 	  			  break;
 	  		  // Suppression du dernier caractère
-	  		  case ASCII_DEL:
+	  		  case ASCII_DEL:   // 08 en ASCII
 	  			  cmdBuffer[idx_cmd--] = '\0';
 	  			  HAL_UART_Transmit(&huart2, uartRxBuffer, UART_RX_BUFFER_SIZE, HAL_MAX_DELAY);
 	  			  break;
@@ -373,7 +377,6 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin, GPIO_PIN_RESET);
