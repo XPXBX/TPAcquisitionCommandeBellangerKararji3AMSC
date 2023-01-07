@@ -42,3 +42,5 @@ Commande du rapport cyclique sur shell.
 Mise en place du ISO_RESET.
 Cablage du moteur et du hacheur.
 Demarrage moteur puis test avec plusieurs valeurs de duty cycle .
+
+coucou bande de nouille
