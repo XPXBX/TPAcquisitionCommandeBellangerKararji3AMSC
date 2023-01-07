@@ -25,6 +25,7 @@
 
 ## Introduction
 
+#Titre en plus
  
 Seance 1 : 
 Installation de GitHub Desktop et mise en place du projet GitHub TP Acquisition de commandes. 
@@ -41,6 +42,3 @@ Commande du rapport cyclique sur shell.
 Mise en place du ISO_RESET.
 Cablage du moteur et du hacheur.
 Demarrage moteur puis test avec plusieurs valeurs de duty cycle .
-
-
-CC, tu me vois ?
