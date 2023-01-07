@@ -9,7 +9,13 @@
 
 **MSC**  _S9 2022-2023_ 
 
-## Hardware
+## Sommaire 
+
+[1. Hardware](#1-Hardware)
+
+
+
+## 1. Hardware
 
 * une carte STM-32 Nucleo-STM32G474RE 
 * un hacheur
@@ -23,24 +29,27 @@
 * _**Réaliser l'asservissement en temps réel**_
 
 
-## Introduction
-
-#Titre en plus
+## Planning
  
-Seance 1 : 
+**Séance 1 :** 
+
 Installation de GitHub Desktop et mise en place du projet GitHub TP Acquisition de commandes. 
 Configuration de la Stm32 et travail intitial sur shell. 
 
-Seance 2 : 
+**Séance 2 :** 
+
 Réalisation du shell. 
 Generation des 4 signaux PWM en commande complementaire decalee.
 calcul et mise en place du temps mort.
 verification sur oscilloscope.
 
-Seance 3 : 
+**Séance 3 :**
+
 Commande du rapport cyclique sur shell.
 Mise en place du ISO_RESET.
 Cablage du moteur et du hacheur.
 Demarrage moteur puis test avec plusieurs valeurs de duty cycle .
 
-coucou bande de nouille
+
+
+
