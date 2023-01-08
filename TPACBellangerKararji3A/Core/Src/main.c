@@ -76,8 +76,13 @@ uint8_t uartTxBuffer[UART_TX_BUFFER_SIZE];
 uint8_t ADC_buffer[ADC_BUFFER_SIZE];
 uint8_t flag=0;
 uint8_t idx=0;
+uint8_t statut=0;
 uint8_t raw_Value;
 uint8_t Average_Voltage;
+uint8_t vitesse;
+int alpha;
+int Alpha1;
+int Alpha2;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -88,12 +93,33 @@ static void MX_TIM1_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
-
+int ConversionAlpha(int vitesse);
+void CCR_Alpha(int alpha);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+int __io_putchar(int ch)
+{
+	HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+	return ch;
+}
 
+int ConversionAlpha(int vitesse)
+{
+	int ValeurAlpha = ((vitesse + 3000)/60);
+	CCR_Alpha(ValeurAlpha);
+	return ValeurAlpha;
+}
+
+void CCR_Alpha(int alpha)
+{
+	Alpha1 = (alpha*TIM1 -> ARR)/100;
+	Alpha2 = TIM1 -> ARR-Alpha1;
+	TIM1->CCR1 = Alpha1;
+	TIM1->CCR2 = Alpha2;
+	/*HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);*/
+}
 /* USER CODE END 0 */
 
 /**
@@ -105,8 +131,6 @@ int main(void)
 	/* USER CODE BEGIN 1 */
 	char	 	cmdBuffer[CMD_BUFFER_SIZE];
 	int 		idx_cmd;
-	int         Alpha1;
-	int         Alpha2;
 	int			Start;
 	int 		AntiStart;
 	char* 		argv[MAX_ARGS];
@@ -152,13 +176,22 @@ int main(void)
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
 	HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
 	HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
-	/* USER CODE END 2 */
-	if(HAL_OK != HAL_ADCEx_Calibration_Start(&hadc1,ADC_SINGLE_ENDED))
+
+	if(HAL_OK != HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED))
+	{
 		Error_Handler();
+	}
+
 	if(HAL_OK != HAL_ADC_Start_DMA(&hadc1, ADC_buffer, ADC_BUFFER_SIZE))
+	{
 		Error_Handler();
+	}
+
 	if(HAL_OK != HAL_TIM_Base_Start(&htim1))
+	{
 		Error_Handler();
+	}
+	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
@@ -167,15 +200,18 @@ int main(void)
 
 
 		// uartRxReceived is set to 1 when a new character is received on uart 1
-		if(uartRxReceived){
-			switch(uartRxBuffer[0]){
+		if(uartRxReceived)
+		{
+			switch(uartRxBuffer[0])
+			{
 			// Nouvelle ligne, instruction à traiter
 			case ASCII_CR: // 13 en ASCII
 				HAL_UART_Transmit(&huart2, newline, sizeof(newline), HAL_MAX_DELAY);
 				cmdBuffer[idx_cmd] = '\0';
 				argc = 0;
 				token = strtok(cmdBuffer, " ");
-				while(token!=NULL){
+				while(token!=NULL)
+				{
 					argv[argc++] = token;
 					token = strtok(NULL, " ");
 				}
@@ -196,55 +232,107 @@ int main(void)
 			uartRxReceived = 0;
 		}
 
-		if(newCmdReady){
-			if(strcmp(argv[0],"set")==0){
-				if(strcmp(argv[1],"PA5")==0){
+
+		if(newCmdReady)
+		{
+
+
+			if(strcmp(argv[0],"help")==0)
+			{
+				HAL_UART_Transmit(&huart2, "Voici la liste des commandes:\r\n", sizeof("Voici la liste des commandes:\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	help\r\n", sizeof("	help\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	-> Affiche la liste des commandes\r\n", sizeof("	-> Affiche la liste des commandes\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	set PA5 (0 ou 1)\r\n", sizeof("	set PA5 (0 ou 1)\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	-> Allume ou eteint la LED\r\n", sizeof("	-> Allume ou eteint la LED\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	pinout\r\n", sizeof("	pinout\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	-> Affiche la liste des PIN utilises et leurs utilisations\r\n", sizeof("	-> Affiche la liste des PIN utilises et leurs utilisations\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	start\r\n", sizeof("	start\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	-> Demarre la generation de PWM\r\n", sizeof("	-> Demarre la generation de PWM\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	stop\r\n", sizeof("	stop\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	-> Stop la generation de PWM\r\n", sizeof("	-> Stop la generation de PWM\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	alpha\r\n", sizeof("	alpha\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	-> Modifie la valeur du rapport cyclique Alpha entre 0 et 1\r\n", sizeof("	-> Modifie la valeur du rapport cyclique Alpha entre 0 et 1\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	reset\r\n", sizeof("	reset\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	-> Reinitialise le systeme\r\n", sizeof("	-> Reinitialise le systeme\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	speed = XXXX\r\n", sizeof("	speed = XXXX\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	-> Regle la vitesse à XXXX [-3000 a 3000] RPM\r\n", sizeof("	-> Regle la vitesse à XXXX [-3000 a 3000] RPM\r\n"), HAL_MAX_DELAY);
+			}
+
+
+
+			else if(strcmp(argv[0],"set")==0)
+			{
+				if(strcmp(argv[1],"PA5")==0)
+				{
 					HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, atoi(argv[2]));
 					sprintf(uartTxBuffer,"Switch on/off led : %d\r\n",atoi(argv[2]));
 					HAL_UART_Transmit(&huart2, uartTxBuffer, 32, HAL_MAX_DELAY);
 				}
-				else{
+				else
+				{
 					HAL_UART_Transmit(&huart2, cmdNotFound, sizeof(cmdNotFound), HAL_MAX_DELAY);
 				}
 
-
 			}
 
-			else  if(strcmp(argv[0],"help")==0){
-				sprintf(uartTxBuffer,"Commandes disponibles : help  pinout  start  stop %d\r\n",atoi(argv[2]));
-				HAL_UART_Transmit(&huart2, uartTxBuffer, 60, HAL_MAX_DELAY);
 
+			else if(strcmp(argv[0],"pinout")==0)
+			{
+				HAL_UART_Transmit(&huart2, "liste des PIN utilises :\r\n", sizeof("liste des PIN utilises :\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	PA5  : Switch on/off la LED\r\n", sizeof("	PA5  : Switch on/off la LED\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	PA8  : PWM 1\r\n", sizeof("	PA8  : PWM 1\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	PA9  : PWM 2\r\n", sizeof("	PA9  : PWM 2\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	PA11 : PWM 1N\r\n", sizeof("	PA11 : PWM 1N\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	PA12 : PWM 2N\r\n", sizeof("	PA12 : PWM 2N\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	PC3  : Reset\r\n", sizeof("	PC3  : Reset\r\n"), HAL_MAX_DELAY);
 			}
-			else if(strcmp(argv[0],"pinout")==0){
-				/*sprintf(uartTxBuffer,"Commandes disponibles : help  pinout  start  stop %d\r\n",atoi(argv[2]));
-	  	    	  HAL_UART_Transmit(&huart2, uartTxBuffer, 60, HAL_MAX_DELAY);*/
 
 
+			else if(strcmp(argv[0],"start")==0)
+			{
+				statut = 0;
+				if (statut == 0)
+				{
+					Start = (50 *TIM1 -> ARR)/100;
+					AntiStart = TIM1 -> ARR-Start;
+					TIM1->CCR1 = Start;
+					TIM1->CCR2 = AntiStart;
+					HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin, 1);
+					HAL_Delay(1);
+					HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin, 0);
+					statut = 1;
+				}
 			}
-			else if(strcmp(argv[0],"start")==0){
-				Start = (50 *TIM1 -> ARR)/100;
-				AntiStart = TIM1 -> ARR-Start;
-				TIM1->CCR1 = Start;
-				TIM1->CCR2 = AntiStart;
-				HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin, 1);
-				HAL_Delay(1);
-				HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin, 0);
 
 
-
-			}
-			else if(strcmp(argv[0],"+")==0){
+			else if(strcmp(argv[0],"+")==0)
+			{
 				TIM1->CCR1 =+2;
 				TIM1->CCR2 =-2;
+			}
+
+
+			else if(strcmp(argv[0],"stop")==0)
+			{
+				statut = 1;
+				if (statut == 1)
+				{
+					HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
+					HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_1);
+					HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
+					HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_2);
+					statut = 0;
+				}
 
 			}
-			else if(strcmp(argv[0],"stop")==0){
 
-			}
-			else if(strcmp(argv[0],"adc")==0){
-				if(1==flag){
+			/*else if(strcmp(argv[0],"adc")==0)
+			   {
+				if(1==flag)
+				{
 					raw_Value = 0;
-					for (idx=0;idx< ADC_BUFFER_SIZE;idx++){
+					for (idx=0;idx< ADC_BUFFER_SIZE;idx++)
+					{
 						raw_Value = raw_Value + ADC_buffer[idx];
 					}
 					Average_Voltage = raw_Value/ADC_BUFFER_SIZE;
@@ -254,33 +342,75 @@ int main(void)
 					flag=0;
 
 				}
+			   }*/
 
+
+			else if(strcmp(argv[0],"adc")==0)
+			{
+				printf("test adc\r\n");
+				if(flag)
+				{
+					printf("%d\r\n", ADC_buffer);
+					flag=0;
+				}
 			}
-			else if(strcmp(argv[0],"alpha")==0){
 
-				Alpha1 = (atoi(argv[1]) *TIM1 -> ARR)/100;
-				Alpha2 = TIM1 -> ARR-Alpha1;
-				TIM1->CCR1 = Alpha1;
-				TIM1->CCR2 = Alpha2;
-				/*HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);*/
 
+			else if(strcmp(argv[0],"alpha")==0)
+			{
+				CCR_Alpha(atoi(argv[1]));
 			}
-			else if (strcmp(argv[0],"reset")==0){
+
+
+			else if(strcmp(argv[0],"speed")==0)
+			{
+				int speed = atoi(argv[1]);
+				if (speed > 0)
+				{
+					if (speed > 3000)
+					{
+						speed = 3000;
+					}
+				}
+				if (speed < 0)
+				{
+					if (speed < -3000)
+					{
+						speed = -3000;
+					}
+				}
+				sprintf(uartTxBuffer,"La vitesse sera reglee sur %d RPM \r\n", speed);
+				HAL_UART_Transmit(&huart2, uartTxBuffer, 64, HAL_MAX_DELAY);
+				HAL_Delay(10);
+				int NewAlpha = ConversionAlpha(speed);
+				sprintf(uartTxBuffer,"Alpha = %d\r\n", NewAlpha);
+				HAL_UART_Transmit(&huart2, uartTxBuffer, 64, HAL_MAX_DELAY);
+			}
+
+
+			else if (strcmp(argv[0],"reset")==0)
+			{
 				HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin, 1);
 				HAL_Delay(1);
 				HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin, 0);
-
 			}
+
+
 			else if(strcmp(argv[0],"get")==0)
 			{
 				HAL_UART_Transmit(&huart2, cmdNotFound, sizeof(cmdNotFound), HAL_MAX_DELAY);
 			}
-			else{
+			else
+			{
 				HAL_UART_Transmit(&huart2, cmdNotFound, sizeof(cmdNotFound), HAL_MAX_DELAY);
 			}
+
+
 			HAL_UART_Transmit(&huart2, prompt, sizeof(prompt), HAL_MAX_DELAY);
 			newCmdReady = 0;
+
 		}
+
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
@@ -602,16 +732,18 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_ADC_ConvCpltCallBack(ADC_HandleTypeDef* hadc){
+	if(HAL_ADC_Stop_DMA(&hadc1) !=  HAL_OK){
+		Error_Handler();}
+	flag=1;
+}
+
 void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart){
 	uartRxReceived = 1;
 	HAL_UART_Receive_IT(&huart2, uartRxBuffer, UART_RX_BUFFER_SIZE);
 }
 
-void HAL_ADC_ConvCpltCallBack(ADC_HandleTypeDef* hadc){
-	if(HAL_ADC_Stop_DMA(&hadc1) !=  HAL_OK)
-		Error_Handler();
-	flag=1;
-}
+
 /* USER CODE END 4 */
 
 /**
