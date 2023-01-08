@@ -16,13 +16,13 @@
 
 [1. Hardware](#1-Hardware)
 
-[2. Objectifs du TP](#2-Objectifs du TP)
+[2. Objectifs du TP](#2-Objectifs-du-TP)
 
-[3. Planning](#3- Planning)
+[3. Planning](#3-Planning)
 
-[4. Configuration des pins](#4-Configuration des pins)
+[4. Configuration des pins](#4-Configuration-des-pins)
 
-[5. Console UART](#5-Console UART)
+[5. Console UART](#5-Console-UART)
 
 
 ## 1. Hardware
@@ -81,6 +81,12 @@ Elle doit nous permettre :
 * de traiter la chaîne de caractères rédigée lorsque que la touche "ENTER" est exécutée
 * de pouvoir gerer plusieurs chaînes de caractères
 * renvoyer les données des fonctions appelées
+
+**_Voici les fonctions rédigées pour les commandes de console :_**
+
+* help
+   
+    -qui affiche toutes les commandes disponibles
 
 
 
