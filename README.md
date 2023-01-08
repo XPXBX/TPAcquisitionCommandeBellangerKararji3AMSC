@@ -1,6 +1,9 @@
 # TP Acquisition & Commande
 
+![e n s e a-msc](https://user-images.githubusercontent.com/94643384/211223916-f7f0b5c8-966f-4bcb-b7ef-f247f3367a62.svg)
 ![control-power](https://user-images.githubusercontent.com/94643384/211193128-17471c6e-8b9d-458f-86f8-35a7823f964f.svg)
+
+
 
 
 ## Auteurs 
@@ -143,7 +146,7 @@ On nous demande une valeur de DeadTime de 2µs, ainsi on doit choisir la configu
 
 D'après la documentation dans le cours, on explique la configuration 
 
-<p float="center">
+<p align="center">
 <img width="441" alt="configDT" src="https://user-images.githubusercontent.com/94643384/211220035-980cf4f8-d915-4eee-93ea-9f444945df31.PNG">
 </p>
 
@@ -175,13 +178,42 @@ On relie ainsi les **sorties PWM, PA12, PA11, PA9 et PA8** aux bras, en reliant 
 
 On note à la pin 33 d'après la datasheet du Power Module, une commande **ISO_RESET** qui commande l'allumage du hacheur. La séquence de détection est un front descendant, l'idée est donc de changer l'état d'un GPIO appelé **ISO_RESET** initialement à l'état **HIGH**, et de le passer à l'état **LOW** 
 
-* On a donc le code pour la fonction Reset :  
+* _On a donc le code pour la fonction Reset :_ 
 
 
 
 
 
 ### 6.3. Commande start
+
+Le hacheur à besoin d'une séquence d'amorçage pour obtenir une tension de sortie.
+
+La fonction **Start** doit prendre en compte : 
+
+* Un allumage via le shell à la commande "start"
+* Un allumage par une pression sur le bouton bleu sur notre carte 
+
+Avec ceci, on met en route les PWM qui auront un DutyCycle à 50%, soit une tension de sortie nulle pour le moteur, il sera donc prêt à tourner.
+
+* _Code **Start**_
+
+
+
+### 6.4. Premiers tests
+
+_On branche ensuite le moteur pour effectuer des tests de rotation avec de telles consigne dans cet ordre défini :_
+
+* Rapport cyclique de 50%
+* Rapport cyclique de 70%
+* Rapport cyclique de 100%
+* Rapport cyclique de 0%
+
+Le moteur se coupe lors du passage de 50% à 70% ainsi que de 70% à 100%. En effe à cause des fortes variations de courants lors de changement brusques de consigne, le hacheur se met en sécurité. le témoin _HALL OVERCURRENT_ s'allume en rouge.
+
+
+### 6.5. Définition de la vitesse
+
+
 
 
 
