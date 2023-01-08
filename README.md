@@ -1,6 +1,9 @@
 # TP Acquisition & Commande
 
+![e n s e a-msc](https://user-images.githubusercontent.com/94643384/211223916-f7f0b5c8-966f-4bcb-b7ef-f247f3367a62.svg)
 ![control-power](https://user-images.githubusercontent.com/94643384/211193128-17471c6e-8b9d-458f-86f8-35a7823f964f.svg)
+
+
 
 
 ## Auteurs 
@@ -23,6 +26,8 @@
 [4. Configuration des pins](#4-Configuration-des-pins)
 
 [5. Console UART](#5-Console-UART)
+
+[6. Commande MCC Basique](#6-Commande-MCC-Basique)
 
 
 ## 1. Hardware
@@ -98,12 +103,12 @@ Elle doit nous permettre :
 
 ## 6. Commande MCC Basique
 
-### Génération de 4 PWM
+### 6.1 Génération de 4 PWM
 
 On genère quatre PWM pour le driver, avec un tel cahier des charges
 
 * Fréquence de la PWM : 16kHz
-* Temps mort minimum : 2us
+* Temps mort minimum : 2µs
 * Résolution minimum : 10bits.
 
 On configure le Timer 1 sur le fichier.ioc en activant "PWM Generation"  sur CH1 & CH2 en générant aussi les PWM complémentaires (CH1N & CH2N)
@@ -133,7 +138,82 @@ Ainsi, on rentre dans les paramètres du _TIMER 1_  :
   <img src="https://user-images.githubusercontent.com/94643384/211208505-e4848d8a-0f4d-48e9-956e-a89a878b1ee4.PNG" width="300" />
 </p>
 
-**Pour le choix de la valeur du DeadTime : **
+
+
+**Pour le choix de la valeur du DeadTime :**
+
+On nous demande une valeur de DeadTime de 2µs, ainsi on doit choisir la configuration dans le fichier.ioc du Dead Time Generator setup entre 0 et 255.
+
+D'après la documentation dans le cours, on explique la configuration 
+
+<p align="center">
+<img width="441" alt="configDT" src="https://user-images.githubusercontent.com/94643384/211220035-980cf4f8-d915-4eee-93ea-9f444945df31.PNG">
+</p>
+
+_Ici notre fréquence d'horloge est de 170MHz, DT = 2µs, calculons DTG[6:0] si DTG[7:5]= 0_
+
+DTG[6:0] = DT/T_clock = 2.10^-6*170.10^6 = 340 > 127 (valeur décimale maximun sur 7 bits) 
+
+_On ne pas écrire DTG sur ses 7 bits avec cette configuration, il faut donc passer la suivante_
+
+_si DTG[7:5]= 10x,_ 
+
+DTG[5:0] = DT/(2*T_clock) - 64 = 106 > 63
+
+_De même, on passe à la suivante,_
+
+_si DTG[7:5] =110,_
+
+DTG[4:0] = DT/(8*T_clock) - 32 = 10,5 < 31
+
+_Le nombre peut être écrit sur ses bits descriptifs ainsi on prendre la configuration avec DTG[7:5] = 110_
+
+**D'où DTG[7:0] = 0x11010011 = 211**
+
+### 6.2 Prise en main du hacheur
+
+On branche ensuite la  carte Nucleo au PCB permettant de la lier avec le hacheur.  Il s'agit d'un hacheur de 3 phases, on le branche seulement à deux bras (parmi Y,R ou B)
+
+On relie ainsi les **sorties PWM, PA12, PA11, PA9 et PA8** aux bras, en reliant les PWM aux entrées "TOP" et les PWM complémentaires aux entrées "BOTTOM".
+
+On note à la pin 33 d'après la datasheet du Power Module, une commande **ISO_RESET** qui commande l'allumage du hacheur. La séquence de détection est un front descendant, l'idée est donc de changer l'état d'un GPIO appelé **ISO_RESET** initialement à l'état **HIGH**, et de le passer à l'état **LOW** 
+
+* _On a donc le code pour la fonction Reset :_ 
+
+
+
+
+
+### 6.3. Commande start
+
+Le hacheur à besoin d'une séquence d'amorçage pour obtenir une tension de sortie.
+
+La fonction **Start** doit prendre en compte : 
+
+* Un allumage via le shell à la commande "start"
+* Un allumage par une pression sur le bouton bleu sur notre carte 
+
+Avec ceci, on met en route les PWM qui auront un DutyCycle à 50%, soit une tension de sortie nulle pour le moteur, il sera donc prêt à tourner.
+
+* _Code **Start**_
+
+
+
+### 6.4. Premiers tests
+
+_On branche ensuite le moteur pour effectuer des tests de rotation avec de telles consigne dans cet ordre défini :_
+
+* Rapport cyclique de 50%
+* Rapport cyclique de 70%
+* Rapport cyclique de 100%
+* Rapport cyclique de 0%
+
+Le moteur se coupe lors du passage de 50% à 70% ainsi que de 70% à 100%. En effe à cause des fortes variations de courants lors de changement brusques de consigne, le hacheur se met en sécurité. le témoin _HALL OVERCURRENT_ s'allume en rouge.
+
+
+### 6.5. Définition de la vitesse
+
+
 
 
 
