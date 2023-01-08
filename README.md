@@ -121,16 +121,19 @@ On l'observe grâce à la comparaison des commandes vu dans le cours
 <img width="418" alt="ccd50" src="https://user-images.githubusercontent.com/94643384/211207348-5cbd6708-1e1b-4ef8-87f1-914069bb14a5.PNG"> <img width="424" alt="cc50" src="https://user-images.githubusercontent.com/94643384/211207429-94eb8271-6f7d-4a61-9b27-a499f90f546b.PNG">
 
 
+<img width="422" alt="ccd85" src="https://user-images.githubusercontent.com/94643384/211207445-93b20144-c78c-4ce3-b3fc-e07549aef18e.PNG"> <img width="423" alt="cc85" src="https://user-images.githubusercontent.com/94643384/211207472-0f091e2d-c1e0-4a24-b739-4d14efb13ffb.PNG">
 
-<p align="left">
-<img width="422" alt="ccd85" src="https://user-images.githubusercontent.com/94643384/211207445-93b20144-c78c-4ce3-b3fc-e07549aef18e.PNG">
+
+Ainsi, on rentre dans les paramètres du _TIMER 1_  :
+
+
+<p float="left">
+  <img src="https://user-images.githubusercontent.com/94643384/211208500-9e54ed38-b1c3-4bb3-9155-098a528c1b31.PNG" width="300" />
+  <img src="https://user-images.githubusercontent.com/94643384/211208502-1c368b54-266d-43d4-b2a7-879729b46e8b.PNG" width="300" /> 
+  <img src="https://user-images.githubusercontent.com/94643384/211208505-e4848d8a-0f4d-48e9-956e-a89a878b1ee4.PNG" width="300" />
 </p>
 
-<p align="right">
-<img width="423" alt="cc85" src="https://user-images.githubusercontent.com/94643384/211207472-0f091e2d-c1e0-4a24-b739-4d14efb13ffb.PNG">
-</p>
-
-
+**Pour le choix de la valeur du DeadTime : **
 
 
 
