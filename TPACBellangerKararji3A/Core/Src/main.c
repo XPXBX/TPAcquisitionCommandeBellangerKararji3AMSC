@@ -36,6 +36,7 @@
 #define CMD_BUFFER_SIZE 64
 #define MAX_ARGS 9
 #define ADC_BUFFER_SIZE 8
+#define	NMOY 100
 // LF = line feed, saut de ligne
 #define ASCII_LF 0x0A
 // CR = carriage return, retour chariot
@@ -50,10 +51,12 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-ADC_HandleTypeDef hadc1;
-DMA_HandleTypeDef hdma_adc1;
+ADC_HandleTypeDef hadc2;
+DMA_HandleTypeDef hdma_adc2;
 
 TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart2;
 
@@ -74,12 +77,15 @@ uint32_t uartRxReceived=0;
 uint8_t uartRxBuffer[UART_RX_BUFFER_SIZE];
 uint8_t uartTxBuffer[UART_TX_BUFFER_SIZE];
 uint8_t ADC_buffer[ADC_BUFFER_SIZE];
+uint16_t tab[NMOY];
+uint8_t call = 0;
 uint8_t flag=0;
 uint8_t idx=0;
 uint8_t statut=0;
 uint8_t raw_Value;
 uint8_t Average_Voltage;
 uint8_t vitesse;
+uint8_t courant;
 int alpha;
 int Alpha1;
 int Alpha2;
@@ -91,7 +97,9 @@ static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_USART2_UART_Init(void);
-static void MX_ADC1_Init(void);
+static void MX_ADC2_Init(void);
+static void MX_TIM2_Init(void);
+static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 int ConversionAlpha(int vitesse);
 void CCR_Alpha(int alpha);
@@ -160,7 +168,9 @@ int main(void)
 	MX_DMA_Init();
 	MX_TIM1_Init();
 	MX_USART2_UART_Init();
-	MX_ADC1_Init();
+	MX_ADC2_Init();
+	MX_TIM2_Init();
+	MX_TIM3_Init();
 	/* USER CODE BEGIN 2 */
 	memset(argv,NULL,MAX_ARGS*sizeof(char*));
 	memset(cmdBuffer,NULL,CMD_BUFFER_SIZE*sizeof(char));
@@ -177,12 +187,12 @@ int main(void)
 	HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
 	HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
 
-	if(HAL_OK != HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED))
+	if(HAL_OK != HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED))
 	{
 		Error_Handler();
 	}
 
-	if(HAL_OK != HAL_ADC_Start_DMA(&hadc1, ADC_buffer, ADC_BUFFER_SIZE))
+	if(HAL_OK != HAL_ADC_Start_DMA(&hadc2, ADC_buffer, ADC_BUFFER_SIZE))
 	{
 		Error_Handler();
 	}
@@ -240,22 +250,22 @@ int main(void)
 			if(strcmp(argv[0],"help")==0)
 			{
 				HAL_UART_Transmit(&huart2, "Voici la liste des commandes:\r\n", sizeof("Voici la liste des commandes:\r\n"), HAL_MAX_DELAY);
-				HAL_UART_Transmit(&huart2, "	help\r\n", sizeof("	help\r\n"), HAL_MAX_DELAY);
-				HAL_UART_Transmit(&huart2, "	-> Affiche la liste des commandes\r\n", sizeof("	-> Affiche la liste des commandes\r\n"), HAL_MAX_DELAY);
-				HAL_UART_Transmit(&huart2, "	set PA5 (0 ou 1)\r\n", sizeof("	set PA5 (0 ou 1)\r\n"), HAL_MAX_DELAY);
-				HAL_UART_Transmit(&huart2, "	-> Allume ou eteint la LED\r\n", sizeof("	-> Allume ou eteint la LED\r\n"), HAL_MAX_DELAY);
-				HAL_UART_Transmit(&huart2, "	pinout\r\n", sizeof("	pinout\r\n"), HAL_MAX_DELAY);
-				HAL_UART_Transmit(&huart2, "	-> Affiche la liste des PIN utilises et leurs utilisations\r\n", sizeof("	-> Affiche la liste des PIN utilises et leurs utilisations\r\n"), HAL_MAX_DELAY);
-				HAL_UART_Transmit(&huart2, "	start\r\n", sizeof("	start\r\n"), HAL_MAX_DELAY);
-				HAL_UART_Transmit(&huart2, "	-> Demarre la generation de PWM\r\n", sizeof("	-> Demarre la generation de PWM\r\n"), HAL_MAX_DELAY);
-				HAL_UART_Transmit(&huart2, "	stop\r\n", sizeof("	stop\r\n"), HAL_MAX_DELAY);
-				HAL_UART_Transmit(&huart2, "	-> Stop la generation de PWM\r\n", sizeof("	-> Stop la generation de PWM\r\n"), HAL_MAX_DELAY);
-				HAL_UART_Transmit(&huart2, "	alpha\r\n", sizeof("	alpha\r\n"), HAL_MAX_DELAY);
-				HAL_UART_Transmit(&huart2, "	-> Modifie la valeur du rapport cyclique Alpha entre 0 et 1\r\n", sizeof("	-> Modifie la valeur du rapport cyclique Alpha entre 0 et 1\r\n"), HAL_MAX_DELAY);
-				HAL_UART_Transmit(&huart2, "	reset\r\n", sizeof("	reset\r\n"), HAL_MAX_DELAY);
-				HAL_UART_Transmit(&huart2, "	-> Reinitialise le systeme\r\n", sizeof("	-> Reinitialise le systeme\r\n"), HAL_MAX_DELAY);
-				HAL_UART_Transmit(&huart2, "	speed = XXXX\r\n", sizeof("	speed = XXXX\r\n"), HAL_MAX_DELAY);
-				HAL_UART_Transmit(&huart2, "	-> Regle la vitesse à XXXX [-3000 a 3000] RPM\r\n", sizeof("	-> Regle la vitesse à XXXX [-3000 a 3000] RPM\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "  - help\r\n", sizeof("  - help\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	>> Affiche la liste des commandes\r\n", sizeof("	>> Affiche la liste des commandes\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "  - set PA5 (0 ou 1)\r\n", sizeof("  - set PA5 (0 ou 1)\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	>> Allume ou eteint la LED\r\n", sizeof("	>> Allume ou eteint la LED\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "  - pinout\r\n", sizeof("  - pinout\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	>> Affiche la liste des PIN utilises et leurs utilisations\r\n", sizeof("	>> Affiche la liste des PIN utilises et leurs utilisations\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "  - start\r\n", sizeof("  - start\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	>> Demarre la generation de PWM\r\n", sizeof("	>> Demarre la generation de PWM\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "  - stop\r\n", sizeof("  - stop\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	>> Stop la generation de PWM\r\n", sizeof("	>> Stop la generation de PWM\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "  - alpha\r\n", sizeof("  - alpha\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	>> Modifie la valeur du rapport cyclique Alpha entre 0 et 1\r\n", sizeof("	>> Modifie la valeur du rapport cyclique Alpha entre 0 et 1\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "  - reset\r\n", sizeof("  - reset\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	>> Reinitialise le systeme\r\n", sizeof("	>> Reinitialise le systeme\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "  - speed = XXXX\r\n", sizeof("  - speed = XXXX\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	>> Regle la vitesse à XXXX [-3000 a 3000] RPM\r\n", sizeof("	>> Regle la vitesse à XXXX [-3000 a 3000] RPM\r\n"), HAL_MAX_DELAY);
 			}
 
 
@@ -279,7 +289,7 @@ int main(void)
 			else if(strcmp(argv[0],"pinout")==0)
 			{
 				HAL_UART_Transmit(&huart2, "liste des PIN utilises :\r\n", sizeof("liste des PIN utilises :\r\n"), HAL_MAX_DELAY);
-				HAL_UART_Transmit(&huart2, "	PA5  : Switch on/off la LED\r\n", sizeof("	PA5  : Switch on/off la LED\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	PA5  : Allumer/eteindre la LED", sizeof("	PA5  : Allumer/eteindre la LED\r\n"), HAL_MAX_DELAY);
 				HAL_UART_Transmit(&huart2, "	PA8  : PWM 1\r\n", sizeof("	PA8  : PWM 1\r\n"), HAL_MAX_DELAY);
 				HAL_UART_Transmit(&huart2, "	PA9  : PWM 2\r\n", sizeof("	PA9  : PWM 2\r\n"), HAL_MAX_DELAY);
 				HAL_UART_Transmit(&huart2, "	PA11 : PWM 1N\r\n", sizeof("	PA11 : PWM 1N\r\n"), HAL_MAX_DELAY);
@@ -465,70 +475,61 @@ void SystemClock_Config(void)
 }
 
 /**
- * @brief ADC1 Initialization Function
+ * @brief ADC2 Initialization Function
  * @param None
  * @retval None
  */
-static void MX_ADC1_Init(void)
+static void MX_ADC2_Init(void)
 {
 
-	/* USER CODE BEGIN ADC1_Init 0 */
+	/* USER CODE BEGIN ADC2_Init 0 */
 
-	/* USER CODE END ADC1_Init 0 */
+	/* USER CODE END ADC2_Init 0 */
 
-	ADC_MultiModeTypeDef multimode = {0};
 	ADC_ChannelConfTypeDef sConfig = {0};
 
-	/* USER CODE BEGIN ADC1_Init 1 */
+	/* USER CODE BEGIN ADC2_Init 1 */
 
-	/* USER CODE END ADC1_Init 1 */
+	/* USER CODE END ADC2_Init 1 */
 
 	/** Common config
 	 */
-	hadc1.Instance = ADC1;
-	hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
-	hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-	hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-	hadc1.Init.GainCompensation = 0;
-	hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
-	hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-	hadc1.Init.LowPowerAutoWait = DISABLE;
-	hadc1.Init.ContinuousConvMode = DISABLE;
-	hadc1.Init.NbrOfConversion = 1;
-	hadc1.Init.DiscontinuousConvMode = DISABLE;
-	hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-	hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-	hadc1.Init.DMAContinuousRequests = DISABLE;
-	hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
-	hadc1.Init.OversamplingMode = DISABLE;
-	if (HAL_ADC_Init(&hadc1) != HAL_OK)
-	{
-		Error_Handler();
-	}
-
-	/** Configure the ADC multi-mode
-	 */
-	multimode.Mode = ADC_MODE_INDEPENDENT;
-	if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
+	hadc2.Instance = ADC2;
+	hadc2.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+	hadc2.Init.Resolution = ADC_RESOLUTION_12B;
+	hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+	hadc2.Init.GainCompensation = 0;
+	hadc2.Init.ScanConvMode = ADC_SCAN_DISABLE;
+	hadc2.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+	hadc2.Init.LowPowerAutoWait = DISABLE;
+	hadc2.Init.ContinuousConvMode = DISABLE;
+	hadc2.Init.NbrOfConversion = 1;
+	hadc2.Init.DiscontinuousConvMode = DISABLE;
+	hadc2.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+	hadc2.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+	hadc2.Init.DMAContinuousRequests = DISABLE;
+	hadc2.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+	hadc2.Init.OversamplingMode = DISABLE;
+	if (HAL_ADC_Init(&hadc2) != HAL_OK)
 	{
 		Error_Handler();
 	}
 
 	/** Configure Regular Channel
 	 */
-	sConfig.Channel = ADC_CHANNEL_1;
+	sConfig.Channel = ADC_CHANNEL_3;
 	sConfig.Rank = ADC_REGULAR_RANK_1;
 	sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
 	sConfig.SingleDiff = ADC_SINGLE_ENDED;
 	sConfig.OffsetNumber = ADC_OFFSET_NONE;
 	sConfig.Offset = 0;
-	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+	if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
 	{
 		Error_Handler();
 	}
-	/* USER CODE BEGIN ADC1_Init 2 */
+	/* USER CODE BEGIN ADC2_Init 2 */
 
-	/* USER CODE END ADC1_Init 2 */
+	/* USER CODE END ADC2_Init 2 */
 
 }
 
@@ -621,6 +622,100 @@ static void MX_TIM1_Init(void)
 }
 
 /**
+ * @brief TIM2 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_TIM2_Init(void)
+{
+
+	/* USER CODE BEGIN TIM2_Init 0 */
+
+	/* USER CODE END TIM2_Init 0 */
+
+	TIM_Encoder_InitTypeDef sConfig = {0};
+	TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+	/* USER CODE BEGIN TIM2_Init 1 */
+
+	/* USER CODE END TIM2_Init 1 */
+	htim2.Instance = TIM2;
+	htim2.Init.Prescaler = 0;
+	htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+	htim2.Init.Period = 65535;
+	htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+	sConfig.EncoderMode = TIM_ENCODERMODE_TI1;
+	sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
+	sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
+	sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
+	sConfig.IC1Filter = 0;
+	sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
+	sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
+	sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
+	sConfig.IC2Filter = 0;
+	if (HAL_TIM_Encoder_Init(&htim2, &sConfig) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+	if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	/* USER CODE BEGIN TIM2_Init 2 */
+
+	/* USER CODE END TIM2_Init 2 */
+
+}
+
+/**
+ * @brief TIM3 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_TIM3_Init(void)
+{
+
+	/* USER CODE BEGIN TIM3_Init 0 */
+
+	/* USER CODE END TIM3_Init 0 */
+
+	TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+	TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+	/* USER CODE BEGIN TIM3_Init 1 */
+
+	/* USER CODE END TIM3_Init 1 */
+	htim3.Instance = TIM3;
+	htim3.Init.Prescaler = 17000;
+	htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+	htim3.Init.Period = 500;
+	htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+	if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+	if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+	if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	/* USER CODE BEGIN TIM3_Init 2 */
+
+	/* USER CODE END TIM3_Init 2 */
+
+}
+
+/**
  * @brief USART2 Initialization Function
  * @param None
  * @retval None
@@ -679,9 +774,9 @@ static void MX_DMA_Init(void)
 	__HAL_RCC_DMA1_CLK_ENABLE();
 
 	/* DMA interrupt init */
-	/* DMA1_Channel1_IRQn interrupt configuration */
-	HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
-	HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+	/* DMA1_Channel2_IRQn interrupt configuration */
+	HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
 
 }
 
@@ -732,13 +827,20 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_ADC_ConvCpltCallBack(ADC_HandleTypeDef* hadc){
-	if(HAL_ADC_Stop_DMA(&hadc1) !=  HAL_OK){
-		Error_Handler();}
-	flag=1;
+void HAL_ADC_ConvCpltCallBack(ADC_HandleTypeDef* hadc)
+{
+	call++;
+	float Imoy = 0;
+	for (int i = 0; i < NMOY; ++i) {
+		Imoy = Imoy + (float)tab[i];
+	}
+	Imoy = Imoy/NMOY;
+	courant = ((Imoy-3100)/4096)*(12*3.3)-0.3;
 }
 
-void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart){
+
+void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
+{
 	uartRxReceived = 1;
 	HAL_UART_Receive_IT(&huart2, uartRxBuffer, UART_RX_BUFFER_SIZE);
 }
