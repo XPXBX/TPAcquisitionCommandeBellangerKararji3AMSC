@@ -83,10 +83,41 @@ Elle doit nous permettre :
 * renvoyer les données des fonctions appelées
 
 **_Voici les fonctions rédigées pour les commandes de console :_**
-
-* help
    
-    -qui affiche toutes les commandes disponibles
+* help
+  - _Permet d'afficher toutes les commandes disponibles sur le shell._
+  
+* pinout
+  - _Renvoie la liste des broches utilisée ainsi que leur fonctionnalité._
+
+* start
+  - _Permet d'allumer le moteur CC_
+  
+* stop
+  - _Permet d'arrêter le moteur_ 
+
+## 6. Commande MCC Basique
+
+### Génération de 4 PWM
+
+On genère quatre PWM pour le driver, avec un tel cahier des charges
+
+* Fréquence de la PWM : 16kHz
+* Temps mort minimum : 2us
+* Résolution minimum : 10bits.
+
+On configure le Timer 1 sur le fichier.ioc en activant "PWM Generation"  sur CH1 & CH2 en générant aussi les PWM complémentaires (CH1N & CH2N)
+
+Pour le choix de la fréquence, on determine le nombre du "Counter Period" avec la formule F_pwm = F_clck/(ARR+1)(PSC+1) avec F_clck = 170Mhz
+
+On fixe le PSC à 0 donc pour que F_pwm = 16kHz, ARR+1 = 10625, ainsi **le counter period est de 5312** puisqu'il s'agit d'une **commande PWM complémentaire décalée**
+
+#### Explication commande complémentaire décalée
+
+La commande complémentaire décalée permet de ne créer au borne du moteur, qu'une tension continue positive ou négative, contrairement à la commande complémentaire simple qui crée une tension alternative. Cette dernière provoque de fortes variations de courant ce qui ralentit le moteur et pourrait mettre en sécurité le driver
+
+On l'observe grâce à la comparaison des commandes vu dans le cours
+
 
 
 
