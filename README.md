@@ -118,6 +118,18 @@ La commande complémentaire décalée permet de ne créer au borne du moteur, qu
 
 On l'observe grâce à la comparaison des commandes vu dans le cours
 
+<img width="418" alt="ccd50" src="https://user-images.githubusercontent.com/94643384/211207348-5cbd6708-1e1b-4ef8-87f1-914069bb14a5.PNG"> <img width="424" alt="cc50" src="https://user-images.githubusercontent.com/94643384/211207429-94eb8271-6f7d-4a61-9b27-a499f90f546b.PNG">
+
+
+
+<p align="left">
+<img width="422" alt="ccd85" src="https://user-images.githubusercontent.com/94643384/211207445-93b20144-c78c-4ce3-b3fc-e07549aef18e.PNG">
+</p>
+
+<p align="right">
+<img width="423" alt="cc85" src="https://user-images.githubusercontent.com/94643384/211207472-0f091e2d-c1e0-4a24-b739-4d14efb13ffb.PNG">
+</p>
+
 
 
 
