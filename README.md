@@ -15,6 +15,8 @@
 
 **MSC**  _S9 2022-2023_ 
 
+## Lien documentation Doxygen
+
 ## Sommaire 
 
 [1. Hardware](#1-Hardware)
@@ -298,7 +300,18 @@ La fonction **Start** doit prendre en compte :
 
 Avec ceci, on met en route les PWM qui auront un DutyCycle à 50%, soit une tension de sortie nulle pour le moteur, il sera donc prêt à tourner.
 
-* _Code **Start**_
+* **CCR_Alpha(alpha)**
+  - Selectionne le DutyCycle des PWM
+
+```
+void CCR_Alpha(int alpha)
+{
+	Alpha1 = (alpha*TIM1 -> ARR)/100;
+	Alpha2 = TIM1 -> ARR-Alpha1;
+	TIM1->CCR1 = Alpha1;
+	TIM1->CCR2 = Alpha2;
+}
+```
 
 
 
