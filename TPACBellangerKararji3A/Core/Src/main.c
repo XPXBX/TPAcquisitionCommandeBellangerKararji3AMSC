@@ -82,8 +82,11 @@ uint8_t raw_Value;
 uint8_t Average_Voltage;
 uint8_t vitesse;
 uint8_t Courant;
-float courant = 0;
+float MesCourant = 0;
+float EntreeCorrecteur=0;
+float commandecourant = 0;
 float CPT = 0;
+float Epsilon = 0;
 int alpha;
 int Alpha1;
 int Alpha2;
@@ -170,6 +173,15 @@ void Enc(void)
 }
 */
 
+
+int Asservissement_courant(float commandecourant){
+	Epsilon = commandecourant - MesCourant;
+
+}
+
+float Correcteur_PI(float EntreeCorrecteur){
+
+}
 /* USER CODE END 0 */
 
 /**
@@ -431,7 +443,7 @@ int main(void)
 
 			else if(strcmp(argv[0],"ValCourant")==0)
 			{
-				sprintf(uartTxBuffer,"Courant = %0.4f\r\n",courant);
+				sprintf(uartTxBuffer,"Courant = %0.4f\r\n",MesCourant);
 				HAL_UART_Transmit(&huart2, uartTxBuffer, sizeof("Courant = XXXXX\r\n"), HAL_MAX_DELAY);
 			}
 
