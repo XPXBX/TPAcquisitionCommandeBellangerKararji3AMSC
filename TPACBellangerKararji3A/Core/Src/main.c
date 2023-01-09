@@ -94,7 +94,7 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 int ConversionAlpha(int vitesse);
 void CCR_Alpha(int alpha);
-void Enc(void);
+//void Enc(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -122,6 +122,7 @@ void CCR_Alpha(int alpha)
 	Alpha2 = TIM1 -> ARR-Alpha1;
 	TIM1->CCR1 = Alpha1;
 	TIM1->CCR2 = Alpha2;
+	TIM1->CNT=0;
 }
 
 /**
@@ -159,7 +160,7 @@ int Conversion_Alpha(int vitesse)
 }
 
 
-
+/*
 void Enc(void)
 {
 	HAL_GPIO_TogglePin(ENC_GPIO_Port, ENC_Pin);
@@ -167,6 +168,7 @@ void Enc(void)
 	CPT = ((((TIM2->CNT)-32767)/0.05)/4096);
 	TIM2->CNT = 32767;
 }
+*/
 
 /* USER CODE END 0 */
 
@@ -221,6 +223,8 @@ int main(void)
 	HAL_Delay(10);
 	HAL_UART_Transmit(&huart2, started, sizeof(started), HAL_MAX_DELAY);
 	HAL_UART_Transmit(&huart2, prompt, sizeof(prompt), HAL_MAX_DELAY);
+	HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
+	HAL_TIM_Base_Start_IT(&htim3);
 
 
 	if(HAL_OK != HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED))
