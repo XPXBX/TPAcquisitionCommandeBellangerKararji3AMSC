@@ -4,7 +4,7 @@
 ![control-power](https://user-images.githubusercontent.com/94643384/211193128-17471c6e-8b9d-458f-86f8-35a7823f964f.svg)
 
 
-
+**A faire CR : renommer les fonctions en camelBack**
 
 ## Auteurs 
 
@@ -221,7 +221,7 @@ On l'observe grâce à la comparaison des commandes vu dans le cours
 
 Ainsi, on rentre dans les paramètres du _TIMER 1_  :
 
-
+**schéma non complet à redssiner"
 <p float="justify">
   <img src="https://user-images.githubusercontent.com/94643384/211208500-9e54ed38-b1c3-4bb3-9155-098a528c1b31.PNG" width="300" /> <img src="https://user-images.githubusercontent.com/94643384/211208502-1c368b54-266d-43d4-b2a7-879729b46e8b.PNG" width="300" /> <img src="https://user-images.githubusercontent.com/94643384/211208505-e4848d8a-0f4d-48e9-956e-a89a878b1ee4.PNG" width="300" />
 </p>
@@ -367,13 +367,17 @@ Afin de traiter plusieurs informations, on utilise le DMA. Le DMA (Direct Memory
 
 **A EXPLIQUER Configuration sur STM**
 
+**Code mesure de courant**
+
 
 ### 7.2 Mesure de la vitesse
 
 A partir de l'encodeur du moteur, on récupère la vitesse de rotation du moteur
 
 
+**Conversion de vitesse explication**
 
+**Code mesure vitesse**
 
 
 ## 8. Asservissement
@@ -382,3 +386,4 @@ Une fois tous les mesures du courant et de vitesse obtenues, il nous reste à r�
 * Asservissement en courant en veillant à ne pas dépasser le courant maximum : le hacheur va limiter cette valeur.
 * Asservissement en vitesse.
 
+On reproduit alors la structure d'asservissement réalisée en TD sur Matlab pour un moteur MCC avec des paramètres similaires. 
