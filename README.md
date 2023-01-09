@@ -89,17 +89,83 @@ Elle doit nous permettre :
 
 **_Voici les fonctions rédigées pour les commandes de console :_**
    
-* help
+* **help**
   - _Permet d'afficher toutes les commandes disponibles sur le shell._
+ 
+ ```
+ 
+			if(strcmp(argv[0],"help")==0)
+			{
+				HAL_UART_Transmit(&huart2, "Voici la liste des commandes:\r\n", sizeof("Voici la liste des commandes:\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "  - help\r\n", sizeof("  - help\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	>> Affiche la liste des commandes\r\n", sizeof("	>> Affiche la liste des commandes\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "  - set PA5 (0 ou 1)\r\n", sizeof("  - set PA5 (0 ou 1)\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	>> Allume ou eteint la LED\r\n", sizeof("	>> Allume ou eteint la LED\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "  - pinout\r\n", sizeof("  - pinout\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	>> Affiche la liste des PIN utilises et leurs utilisations\r\n", sizeof("	>> Affiche la liste des PIN utilises et leurs utilisations\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "  - start\r\n", sizeof("  - start\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	>> Demarre la generation de PWM\r\n", sizeof("	>> Demarre la generation de PWM\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "  - stop\r\n", sizeof("  - stop\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	>> Stop la generation de PWM\r\n", sizeof("	>> Stop la generation de PWM\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "  - alpha\r\n", sizeof("  - alpha\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	>> Modifie la valeur du rapport cyclique Alpha entre 0 et 1\r\n", sizeof("	>> Modifie la valeur du rapport cyclique Alpha entre 0 et 1\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "  - reset\r\n", sizeof("  - reset\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	>> Reinitialise le systeme\r\n", sizeof("	>> Reinitialise le systeme\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "  - speed = XXXX\r\n", sizeof("  - speed = XXXX\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	>> Regle la vitesse à XXXX [-3000 a 3000] RPM\r\n", sizeof("	>> Regle la vitesse à XXXX [-3000 a 3000] RPM\r\n"), HAL_MAX_DELAY);
+			}
+
+```
   
-* pinout
+* **pinout**
   - _Renvoie la liste des broches utilisée ainsi que leur fonctionnalité._
 
-* start
+```
+			else if(strcmp(argv[0],"pinout")==0)
+			{
+				HAL_UART_Transmit(&huart2, "liste des PIN utilises :\r\n", sizeof("liste des PIN utilises :\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	PA5  : Allumer/eteindre la LED", sizeof("	PA5  : Allumer/eteindre la LED\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	PA8  : PWM 1\r\n", sizeof("	PA8  : PWM 1\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	PA9  : PWM 2\r\n", sizeof("	PA9  : PWM 2\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	PA11 : PWM 1N\r\n", sizeof("	PA11 : PWM 1N\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	PA12 : PWM 2N\r\n", sizeof("	PA12 : PWM 2N\r\n"), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2, "	PC3  : Reset\r\n", sizeof("	PC3  : Reset\r\n"), HAL_MAX_DELAY);
+			}
+
+```
+
+* **start**
   - _Permet d'allumer le moteur CC_
-  
-* stop
+
+```
+
+			else if(strcmp(argv[0],"start")==0)
+			{
+
+				Start_PWM();
+				CCR_Alpha(50);
+				HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin, 1);
+				HAL_Delay(1);
+				HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin, 0);
+
+			}
+```
+
+* **stop**
   - _Permet d'arrêter le moteur_ 
+
+```
+
+			else if(strcmp(argv[0],"stop")==0)
+			{
+
+			Stop_PWM();
+
+			}
+
+```
+
+***NB : certains codes seront explicités et expliqués au cours du Readme***
 
 ## 6. Commande MCC Basique
 
@@ -168,7 +234,11 @@ DTG[4:0] = DT/(8*T_clock) - 32 = 10,5 < 31
 
 _Le nombre peut être écrit sur ses bits descriptifs ainsi on prendre la configuration avec DTG[7:5] = 110_
 
-**D'où DTG[7:0] = 0x11010011 = 211**
+**D'où DTG[7:0] = 0x11010011 = 210 (pour un DeadTime légèrement supérieur à 2µs)**
+
+<p align="center">
+<img width="244" alt="DeadTime" src="https://user-images.githubusercontent.com/94643384/211284990-d312b118-be9a-496a-b16d-d3c9f6f8b538.PNG">
+</p>
 
 ### 6.2 Prise en main du hacheur
 
