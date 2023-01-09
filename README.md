@@ -144,10 +144,7 @@ Elle doit nous permettre :
 
 				Start_PWM();
 				CCR_Alpha(50);
-				HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin, 1);
-				HAL_Delay(1);
-				HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin, 0);
-
+				
 			}
 ```
 
@@ -164,6 +161,31 @@ Elle doit nous permettre :
 			}
 
 ```
+
+* **set PA5**
+  - _Une fonction qui allume/éteint la LED connectée à la pin PA5 de notre carte_
+
+```
+
+
+			else if(strcmp(argv[0],"set")==0)
+			{
+				if(strcmp(argv[1],"PA5")==0)
+				{
+					HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, atoi(argv[2]));
+					sprintf(uartTxBuffer,"Switch on/off led : %d\r\n",atoi(argv[2]));
+					HAL_UART_Transmit(&huart2, uartTxBuffer, 32, HAL_MAX_DELAY);
+				}
+				else
+				{
+					HAL_UART_Transmit(&huart2, cmdNotFound, sizeof(cmdNotFound), HAL_MAX_DELAY);
+				}
+
+			}
+
+```
+
+
 
 ***NB : certains codes seront explicités et expliqués au cours du Readme***
 
@@ -248,10 +270,21 @@ On relie ainsi les **sorties PWM, PA12, PA11, PA9 et PA8** aux bras, en reliant 
 
 On note à la pin 33 d'après la datasheet du Power Module, une commande **ISO_RESET** qui commande l'allumage du hacheur. La séquence de détection est un front descendant, l'idée est donc de changer l'état d'un GPIO appelé **ISO_RESET** initialement à l'état **HIGH**, et de le passer à l'état **LOW** 
 
-* _On a donc le code pour la fonction Reset :_ 
+_On a donc le code pour la fonction Reset _ 
+
+* **Reset**
+
+```
+
+			else if (strcmp(argv[0],"reset")==0)
+			{
+				HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin, 1);
+				HAL_Delay(1);
+				HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin, 0);
+			}
 
 
-
+```
 
 
 ### 6.3. Commande start
