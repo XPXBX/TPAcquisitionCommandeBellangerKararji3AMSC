@@ -368,4 +368,17 @@ Afin de traiter plusieurs informations, on utilise le DMA. Le DMA (Direct Memory
 **A EXPLIQUER Configuration sur STM**
 
 
+### 7.2 Mesure de la vitesse
+
+A partir de l'encodeur du moteur, on récupère la vitesse de rotation du moteur
+
+
+
+
+
+## 8. Asservissement
+
+Une fois tous les mesures du courant et de vitesse obtenues, il nous reste à réaliser les asservissements :
+* Asservissement en courant en veillant à ne pas dépasser le courant maximum : le hacheur va limiter cette valeur.
+* Asservissement en vitesse.
 
