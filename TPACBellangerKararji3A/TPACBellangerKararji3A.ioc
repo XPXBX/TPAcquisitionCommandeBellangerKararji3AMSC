@@ -70,6 +70,7 @@ Mcu.UserConstants=
 Mcu.UserName=STM32G474RETx
 MxCube.Version=6.6.1
 MxDb.Version=DB.6.0.60
+NVIC.ADC1_2_IRQn=true\:0\:0\:false\:false\:true\:true\:true\:true
 NVIC.BusFault_IRQn=true\:0\:0\:false\:false\:true\:false\:false\:false
 NVIC.DMA1_Channel2_IRQn=true\:0\:0\:false\:false\:true\:false\:true\:true
 NVIC.DebugMonitor_IRQn=true\:0\:0\:false\:false\:true\:false\:false\:false

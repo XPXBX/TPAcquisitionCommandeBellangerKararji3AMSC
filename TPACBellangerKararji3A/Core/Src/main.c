@@ -81,7 +81,7 @@ uint8_t idx=0;
 uint8_t raw_Value;
 uint8_t Average_Voltage;
 uint8_t vitesse;
-uint8_t courant;
+float courant;
 int alpha;
 int Alpha1;
 int Alpha2;
@@ -338,7 +338,7 @@ int main(void)
 			else if(strcmp(argv[0],"stop")==0)
 			{
 
-			Stop_PWM();
+				Stop_PWM();
 
 			}
 
@@ -409,6 +409,13 @@ int main(void)
 				HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin, 1);
 				HAL_Delay(1);
 				HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin, 0);
+			}
+
+
+			else if(strcmp(argv[0],"ValCourant")==0)
+			{
+				sprintf(uartTxBuffer,"Courant = %0.4f",courant);
+				HAL_UART_Transmit(&huart2, uartTxBuffer, sizeof("Courant = XXXXX\r\n"), HAL_MAX_DELAY);
 			}
 
 
