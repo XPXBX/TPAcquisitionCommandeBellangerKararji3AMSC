@@ -41,7 +41,7 @@
 #define CMD_BUFFER_SIZE 64
 #define MAX_ARGS 9
 #define ADC_BUFFER_SIZE 8
-#define	NMOY 100
+#define	NMOY 15
 // LF = line feed, saut de ligne
 #define ASCII_LF 0x0A
 // CR = carriage return, retour chariot
@@ -75,13 +75,15 @@ uint8_t uartRxBuffer[UART_RX_BUFFER_SIZE];
 uint8_t uartTxBuffer[UART_TX_BUFFER_SIZE];
 uint8_t ADC_buffer[ADC_BUFFER_SIZE];
 uint16_t tab[NMOY];
-uint8_t call = 0;
+uint8_t call=0;
 uint8_t flag=0;
 uint8_t idx=0;
 uint8_t raw_Value;
 uint8_t Average_Voltage;
 uint8_t vitesse;
-float courant;
+uint8_t Courant;
+float courant = 0;
+float CPT = 0;
 int alpha;
 int Alpha1;
 int Alpha2;
@@ -92,6 +94,7 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 int ConversionAlpha(int vitesse);
 void CCR_Alpha(int alpha);
+void Enc(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -148,22 +151,32 @@ void Stop_PWM(void){
  * @argument alpha
  * @retval none
  */
-int ConversionAlpha(int vitesse)
+int Conversion_Alpha(int vitesse)
 {
 	int ValeurAlpha = ((vitesse + 3000)/60);
 	CCR_Alpha(ValeurAlpha);
 	return ValeurAlpha;
 }
 
+
+
+void Enc(void)
+{
+	HAL_GPIO_TogglePin(ENC_GPIO_Port, ENC_Pin);
+	HAL_GPIO_TogglePin(ENC_GPIO_Port, ENC_Pin);
+	CPT = ((((TIM2->CNT)-32767)/0.05)/4096);
+	TIM2->CNT = 32767;
+}
+
 /* USER CODE END 0 */
 
 /**
- * @brief  The application entry point.
- * @retval int
- */
+  * @brief  The application entry point.
+  * @retval int
+  */
 int main(void)
 {
-	/* USER CODE BEGIN 1 */
+  /* USER CODE BEGIN 1 */
 	char	 	cmdBuffer[CMD_BUFFER_SIZE];
 	int 		idx_cmd;
 	int			Start;
@@ -172,33 +185,33 @@ int main(void)
 	int		 	argc = 0;
 	char*		token;
 	int 		newCmdReady = 0;
-	/* USER CODE END 1 */
+  /* USER CODE END 1 */
 
-	/* MCU Configuration--------------------------------------------------------*/
+  /* MCU Configuration--------------------------------------------------------*/
 
-	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-	HAL_Init();
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
 
-	/* USER CODE BEGIN Init */
+  /* USER CODE BEGIN Init */
 
-	/* USER CODE END Init */
+  /* USER CODE END Init */
 
-	/* Configure the system clock */
-	SystemClock_Config();
+  /* Configure the system clock */
+  SystemClock_Config();
 
-	/* USER CODE BEGIN SysInit */
+  /* USER CODE BEGIN SysInit */
 
-	/* USER CODE END SysInit */
+  /* USER CODE END SysInit */
 
-	/* Initialize all configured peripherals */
-	MX_GPIO_Init();
-	MX_DMA_Init();
-	MX_TIM1_Init();
-	MX_USART2_UART_Init();
-	MX_ADC2_Init();
-	MX_TIM2_Init();
-	MX_TIM3_Init();
-	/* USER CODE BEGIN 2 */
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_DMA_Init();
+  MX_TIM1_Init();
+  MX_USART2_UART_Init();
+  MX_ADC2_Init();
+  MX_TIM2_Init();
+  MX_TIM3_Init();
+  /* USER CODE BEGIN 2 */
 	memset(argv,NULL,MAX_ARGS*sizeof(char*));
 	memset(cmdBuffer,NULL,CMD_BUFFER_SIZE*sizeof(char));
 	memset(uartRxBuffer,NULL,UART_RX_BUFFER_SIZE*sizeof(char));
@@ -224,10 +237,10 @@ int main(void)
 	{
 		Error_Handler();
 	}
-	/* USER CODE END 2 */
+  /* USER CODE END 2 */
 
-	/* Infinite loop */
-	/* USER CODE BEGIN WHILE */
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
 	while (1)
 	{
 
@@ -398,7 +411,7 @@ int main(void)
 				sprintf(uartTxBuffer,"La vitesse sera reglee sur %d RPM \r\n", speed);
 				HAL_UART_Transmit(&huart2, uartTxBuffer, 64, HAL_MAX_DELAY);
 				HAL_Delay(10);
-				int NewAlpha = ConversionAlpha(speed);
+				int NewAlpha = Conversion_Alpha(speed);
 				sprintf(uartTxBuffer,"Alpha = %d\r\n", NewAlpha);
 				HAL_UART_Transmit(&huart2, uartTxBuffer, 64, HAL_MAX_DELAY);
 			}
@@ -414,8 +427,15 @@ int main(void)
 
 			else if(strcmp(argv[0],"ValCourant")==0)
 			{
-				sprintf(uartTxBuffer,"Courant = %0.4f",courant);
+				sprintf(uartTxBuffer,"Courant = %0.4f\r\n",courant);
 				HAL_UART_Transmit(&huart2, uartTxBuffer, sizeof("Courant = XXXXX\r\n"), HAL_MAX_DELAY);
+			}
+
+
+			else if(strcmp(argv[0], "Encodeur")==0)
+			{
+				sprintf(uartTxBuffer,"encodeur = %f",CPT);
+				HAL_UART_Transmit(&huart2, uartTxBuffer, sizeof(uartTxBuffer), HAL_MAX_DELAY);
 			}
 
 
@@ -434,63 +454,63 @@ int main(void)
 
 		}
 
-		/* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
-		/* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
 	}
-	/* USER CODE END 3 */
+  /* USER CODE END 3 */
 }
 
 /**
- * @brief System Clock Configuration
- * @retval None
- */
+  * @brief System Clock Configuration
+  * @retval None
+  */
 void SystemClock_Config(void)
 {
-	RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-	RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-	/** Configure the main internal regulator output voltage
-	 */
-	HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1_BOOST);
+  /** Configure the main internal regulator output voltage
+  */
+  HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1_BOOST);
 
-	/** Initializes the RCC Oscillators according to the specified parameters
-	 * in the RCC_OscInitTypeDef structure.
-	 */
-	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-	RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-	RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV4;
-	RCC_OscInitStruct.PLL.PLLN = 85;
-	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-	RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
-	RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
-	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-	{
-		Error_Handler();
-	}
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV4;
+  RCC_OscInitStruct.PLL.PLLN = 85;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
-	/** Initializes the CPU, AHB and APB buses clocks
-	 */
-	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-			|RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
-	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
-	{
-		Error_Handler();
-	}
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
+  {
+    Error_Handler();
+  }
 }
 
 /* USER CODE BEGIN 4 */
 void HAL_ADC_ConvCpltCallBack(ADC_HandleTypeDef* hadc)
 {
-	call++;
+	//call++;
 	float Imoy = 0;
 	for (int i = 0; i < NMOY; ++i) {
 		Imoy = Imoy + (float)tab[i];
@@ -510,33 +530,33 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 /* USER CODE END 4 */
 
 /**
- * @brief  This function is executed in case of error occurrence.
- * @retval None
- */
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
 void Error_Handler(void)
 {
-	/* USER CODE BEGIN Error_Handler_Debug */
+  /* USER CODE BEGIN Error_Handler_Debug */
 	/* User can add his own implementation to report the HAL error return state */
 	__disable_irq();
 	while (1)
 	{
 	}
-	/* USER CODE END Error_Handler_Debug */
+  /* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT
 /**
- * @brief  Reports the name of the source file and the source line number
- *         where the assert_param error has occurred.
- * @param  file: pointer to the source file name
- * @param  line: assert_param error line source number
- * @retval None
- */
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
 void assert_failed(uint8_t *file, uint32_t line)
 {
-	/* USER CODE BEGIN 6 */
+  /* USER CODE BEGIN 6 */
 	/* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-	/* USER CODE END 6 */
+  /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
