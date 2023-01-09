@@ -222,10 +222,8 @@ On l'observe grâce à la comparaison des commandes vu dans le cours
 Ainsi, on rentre dans les paramètres du _TIMER 1_  :
 
 
-<p float="left">
-  <img src="https://user-images.githubusercontent.com/94643384/211208500-9e54ed38-b1c3-4bb3-9155-098a528c1b31.PNG" width="300" />
-  <img src="https://user-images.githubusercontent.com/94643384/211208502-1c368b54-266d-43d4-b2a7-879729b46e8b.PNG" width="300" /> 
-  <img src="https://user-images.githubusercontent.com/94643384/211208505-e4848d8a-0f4d-48e9-956e-a89a878b1ee4.PNG" width="300" />
+<p float="justify">
+  <img src="https://user-images.githubusercontent.com/94643384/211208500-9e54ed38-b1c3-4bb3-9155-098a528c1b31.PNG" width="300" /> <img src="https://user-images.githubusercontent.com/94643384/211208502-1c368b54-266d-43d4-b2a7-879729b46e8b.PNG" width="300" /> <img src="https://user-images.githubusercontent.com/94643384/211208505-e4848d8a-0f4d-48e9-956e-a89a878b1ee4.PNG" width="300" />
 </p>
 
 
@@ -329,7 +327,45 @@ Le moteur se coupe lors du passage de 50% à 70% ainsi que de 70% à 100%. En ef
 
 ### 6.5. Définition de la vitesse
 
+Pour des raisons pratiques, on souhaite maintenant commander le moteur avec une consigne de vitesse avec la fonction **"speed"**
+Il faut par protection réaliser un test afin de limiter la vitesse à 3000 tr/min.
 
+Ensuite, on converti la valeur en commande d'alpha, avec une fonction **Conversion_alpha(int)**
+
+* **Conversion_Alpha**
+
+```
+int Conversion_Alpha(int vitesse)
+{
+	int ValeurAlpha = ((vitesse + 3000)/60);
+	CCR_Alpha(ValeurAlpha);
+	return ValeurAlpha;
+}
+
+```
+**Expliquer la conversion**
+
+
+## 7. Capteurs de courant et position
+
+Objectif :
+
+* Mettre en place la mesure de courant à partir de la résistance de shunt
+* Mettre en place la mesure de position du moteur à partir de la roue codeuse
+
+### 7.1. Mesure de courant
+
+_Pour faire l'asservissement en courant, il est nécessaire de faire des mesures à chaque période de PWM sur les phases utilisées pour commander le moteur._
+
+On relève la tension des pins 16 et 35, qui correspondent aux capteurs de courant des broches Red et Yellow.
+
+**A Relever**
+
+On utilise ensuite un ADC sur la Nucleo, qui va permet de convertir une valeur analogique en une valeur numérique afin d'obtenir la valeur moyenne de courant de chaque branche. 
+
+Afin de traiter plusieurs informations, on utilise le DMA. Le DMA (Direct Memory Access) est un Mécanisme qui permet l'accèss direct à la mémoire vive sans passer par le processeur permettant ainsi une accélération assez importante des performances pour les bus d'entrées/sorties.
+
+**A EXPLIQUER Configuration sur STM**
 
 
 
