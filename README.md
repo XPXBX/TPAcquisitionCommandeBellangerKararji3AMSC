@@ -529,11 +529,11 @@ void asservissement_Courant(float commandecourant)
 }
 
 ```
-Par manque de temps dû à des difficultés diverses rencontrés parfois lors de certaines séances (souci de shell avec taille de buffer, problème acquisition de données capteur) , l'aquisition des données sur le moteur asservi n'a pas été réalisé tout comme l'asservissement en vitesse (deuxième boucle). 
+Par manque de temps dû à des difficultés diverses rencontrées parfois lors de certaines séances (souci de shell avec taille de buffer, problème acquisition de données capteur) , l'aquisition des données sur le moteur asservi n'a pas été réalisé tout comme l'asservissement en vitesse (deuxième boucle). 
 
 ## Conclusion
 
-Notre TP devait permerttre à partir d'une carte STM, d'un driver et un moteur à courant continu de pouvoir piloter le moteur depuis un ordinateur via une console et une liaison UART. Par ailleurs, en plus du pilotage, il se devait de contrôler certaines grandeurs comme le courant ou bien la vitesse de rotation afin de pouvoir établir un asservissement en courant, puis en vitesse pour pourvoir finalement atteindre un asservissement double boucle. 
+Notre TP devait permettre à partir d'une carte STM, d'un driver et un moteur à courant continu de pouvoir piloter le moteur depuis un ordinateur via une console et une liaison UART. Par ailleurs, en plus du pilotage, il se devait de contrôler certaines grandeurs comme le courant ou bien la vitesse de rotation afin de pouvoir établir un asservissement en courant, puis en vitesse pour pourvoir finalement atteindre un asservissement double boucle. 
 
 
-Comme dit précedement, certaines séance de TP furent plus complexes que d'autres ce qui a accumulé un peu de retard pour pouvoir finir le TP.
+Comme dit précedement, certaines séances de TP furent plus complexes que d'autres ce qui a accumulé un peu de retard pour pouvoir finir le TP.
