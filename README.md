@@ -481,6 +481,8 @@ On configure un timer en "encodeur mode" pour récupérer à intervalle de temps
 
 
 
+
+
 ## 8. Asservissement
 
 Une fois tous les mesures du courant et de vitesse obtenues, il nous reste à réaliser les asservissements :
@@ -489,5 +491,34 @@ Une fois tous les mesures du courant et de vitesse obtenues, il nous reste à r�
 
 On reproduit alors la structure d'asservissement réalisée en TD sur Matlab pour un moteur MCC avec des paramètres similaires. 
 
+<p align="center">
+	<img width="806" alt="Asserv" src="https://user-images.githubusercontent.com/94643384/214137210-d1bfdba3-c67e-41f9-917e-490d71e59eb1.PNG">
+</p>
+
+Ainsi on reproduit la première boucle de courant à l'aide de la fonction **asservisement_Courant(float commandecourant)** qui en plus d'intégrer le correcteur proportionel intégral avec les coefficients _Kp_ et _Ki_, possède une boucle anti-Windup afin de ne pas rendre le système instable en cas de dépassement de saturation. 
+
+```
+void asservissement_Courant(float commandecourant)
+{
+	epsilon = commandecourant - mesure_Courant;
+	new_Alpha = Kp_Current*epsilon + Ki_Current*(old_Alpha + epsilon);
+	// anti-Windup
+	if (new_Alpha > 100)
+	{
+		new_Alpha = 100;
+	}
+	else if (new_Alpha < -100)
+	{
+		new_Alpha = -100;
+	}
+	else
+	{
+		new_Alpha = old_Alpha;
+	}
+	CCR_Alpha(new_Alpha);
+}
+
+```
+Par manque de temps dû à des difficultés diverses rencontrés parfois lors de certaines séances (souci de shell avec taille de buffer, problème acquisition de données capteur) , l'aquisition des données sur le moteur asservi n'a pas été réalisé tout comme l'asservissement en vitesse (deuxième boucle). 
 
 ## Conclusion
