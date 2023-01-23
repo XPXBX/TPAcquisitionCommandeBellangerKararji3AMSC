@@ -1,4 +1,4 @@
-# TP Acquisition & Commande
+# TP Acquisition & Commande  ( Attention CR non terminé avant ce soir !)
 
 ![e n s e a-msc](https://user-images.githubusercontent.com/94643384/211223916-f7f0b5c8-966f-4bcb-b7ef-f247f3367a62.svg)
 ![control-power](https://user-images.githubusercontent.com/94643384/211193128-17471c6e-8b9d-458f-86f8-35a7823f964f.svg)
