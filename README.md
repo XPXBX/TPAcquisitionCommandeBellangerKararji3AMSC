@@ -221,14 +221,22 @@ On l'observe grâce à la comparaison des commandes vu dans le cours
 <img width="418" alt="ccd50" src="https://user-images.githubusercontent.com/94643384/211207348-5cbd6708-1e1b-4ef8-87f1-914069bb14a5.PNG"> <img width="424" alt="cc50" src="https://user-images.githubusercontent.com/94643384/211207429-94eb8271-6f7d-4a61-9b27-a499f90f546b.PNG">
 
 
-<img width="422" alt="ccd85" src="https://user-images.githubusercontent.com/94643384/211207445-93b20144-c78c-4ce3-b3fc-e07549aef18e.PNG"> <img width="423" alt="cc85" src="https://user-images.githubusercontent.com/94643384/211207472-0f091e2d-c1e0-4a24-b739-4d14efb13ffb.PNG">
+Pour un alpha de 80% environ on a une telle allure de schéma 
+![Commande-Complémentaire-Décalée](https://user-images.githubusercontent.com/94643384/214088341-cfd1b6cb-1e14-416e-a8f4-d813412adffd.jpg)
 
 
 Ainsi, on rentre dans les paramètres du _TIMER 1_  :
 
-**schéma non complet à redssiner"
+
 <p float="justify">
   <img src="https://user-images.githubusercontent.com/94643384/211208500-9e54ed38-b1c3-4bb3-9155-098a528c1b31.PNG" width="300" /> <img src="https://user-images.githubusercontent.com/94643384/211208502-1c368b54-266d-43d4-b2a7-879729b46e8b.PNG" width="300" /> <img src="https://user-images.githubusercontent.com/94643384/211208505-e4848d8a-0f4d-48e9-956e-a89a878b1ee4.PNG" width="300" />
+</p>
+
+
+Sur oscilloscope on trace nos PWM :
+
+<p align="center">
+<img width="601" alt="PWMosci" src="https://user-images.githubusercontent.com/94643384/214090204-57d1aff2-7166-4614-9dcc-f70834cced29.PNG">
 </p>
 
 
@@ -266,6 +274,8 @@ _Le nombre peut être écrit sur ses bits descriptifs ainsi on prendre la config
 <p align="center">
 <img width="244" alt="DeadTime" src="https://user-images.githubusercontent.com/94643384/211284990-d312b118-be9a-496a-b16d-d3c9f6f8b538.PNG">
 </p>
+
+La valeur du DeadTime à été vérifié à l'aide de l'oscillospe et s'averrait convenable (image manquante).
 
 ### 6.2 Prise en main du hacheur
 
@@ -327,7 +337,16 @@ _On branche ensuite le moteur pour effectuer des tests de rotation avec de telle
 * Rapport cyclique de 100%
 * Rapport cyclique de 0%
 
+_Le démarrage s'effectue de cette façon :_
+
+* Hard Reset de la carte
+* ISO_reset
+* Start
+* Alpha X avec X proche de 50.
+
 Le moteur se coupe lors du passage de 50% à 70% ainsi que de 70% à 100%. En effe à cause des fortes variations de courants lors de changement brusques de consigne, le hacheur se met en sécurité. le témoin _HALL OVERCURRENT_ s'allume en rouge.
+
+
 
 
 ### 6.5. Définition de la vitesse
@@ -339,6 +358,7 @@ Ensuite, on converti la valeur en commande d'alpha, avec une fonction **Conversi
 
 * **Conversion_Alpha**
 
+On souhaite 100% de alpha pour 3000tr/min et 50% de alpha pour 0tr/min en complémentaire décalée d'où la formule dans le code
 ```
 int Conversion_Alpha(int vitesse)
 {
@@ -348,7 +368,37 @@ int Conversion_Alpha(int vitesse)
 }
 
 ```
-**Expliquer la conversion**
+
+Ainsi on ajoute sur le Shell, un test pour limiter la vitesse afin de ne pas abîmer le moteur si la vitesse max n'est pas connu. 
+
+```
+
+			else if(strcmp(argv[0],"speed")==0)
+			{
+				int speed = atoi(argv[1]);
+				if (speed > 0)
+				{
+					if (speed > 3000)
+					{
+						speed = 3000;
+					}
+				}
+				if (speed < 0)
+				{
+					if (speed < -3000)
+					{
+						speed = -3000;
+					}
+				}
+				sprintf(uartTxBuffer,"La vitesse sera reglee sur %d RPM \r\n", speed);
+				HAL_UART_Transmit(&huart2, uartTxBuffer, 64, HAL_MAX_DELAY);
+				HAL_Delay(10);
+				int NewAlpha = conversion_Alpha(speed);
+				sprintf(uartTxBuffer,"Alpha = %d\r\n", NewAlpha);
+				HAL_UART_Transmit(&huart2, uartTxBuffer, 64, HAL_MAX_DELAY);
+			}
+
+```
 
 
 ## 7. Capteurs de courant et position
