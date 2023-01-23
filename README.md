@@ -4,8 +4,6 @@
 ![control-power](https://user-images.githubusercontent.com/94643384/211193128-17471c6e-8b9d-458f-86f8-35a7823f964f.svg)
 
 
-**A faire CR : renommer les fonctions en camelBack**
-
 ## Auteurs 
 
 * **Pierre Bellanger** _alias_ [@XPXBX](https://github.com/XPXBX)
@@ -68,6 +66,13 @@ Mise en place du ISO_RESET.
 Cablage du moteur et du hacheur.
 Demarrage moteur puis test avec plusieurs valeurs de duty cycle .
 
+**Séance 4 :**
+
+Acquisition des capteurs de courant et de vitesse
+
+**Séance 5 :**
+
+Réalisation du début de l'asservissement en courant
 
 ## 4. Configuration des pins
 
@@ -387,3 +392,6 @@ Une fois tous les mesures du courant et de vitesse obtenues, il nous reste à r�
 * Asservissement en vitesse.
 
 On reproduit alors la structure d'asservissement réalisée en TD sur Matlab pour un moteur MCC avec des paramètres similaires. 
+
+
+## Conclusion
