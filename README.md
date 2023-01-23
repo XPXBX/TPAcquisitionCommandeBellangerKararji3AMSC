@@ -27,6 +27,10 @@
 
 [6. Commande MCC Basique](#6-Commande-MCC-Basique)
 
+[7. Capteurs de courant et position](#7-Capteurs-de-courant-et-position)
+
+[8. Asservissement](#8-Asservissement)
+
 
 ## 1. Hardware
 
