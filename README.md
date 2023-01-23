@@ -414,20 +414,55 @@ _Pour faire l'asservissement en courant, il est nécessaire de faire des mesures
 
 On relève la tension des pins 16 et 35, qui correspondent aux capteurs de courant des broches Red et Yellow.
 
-**A Relever**
 
-On utilise ensuite un ADC sur la Nucleo, qui va permet de convertir une valeur analogique en une valeur numérique afin d'obtenir la valeur moyenne de courant de chaque branche. 
+
+On utilise ensuite un ADC sur la Nucleo, qui va permet de convertir une valeur analogique en une valeur numérique afin d'obtenir la valeur moyenne de courant de chaque branche.On utilse le fonctionnement de l'ADC par déclanchement hardware (Timer) et interruption par le DMA.
 
 Afin de traiter plusieurs informations, on utilise le DMA. Le DMA (Direct Memory Access) est un Mécanisme qui permet l'accèss direct à la mémoire vive sans passer par le processeur permettant ainsi une accélération assez importante des performances pour les bus d'entrées/sorties.
 
-**A EXPLIQUER Configuration sur STM**
+<p align="center">
+	<img width="430" alt="ADC" src="https://user-images.githubusercontent.com/94643384/214100838-72e831ba-3bc4-46ac-9fb6-3818682c43a7.PNG">
+</p>
 
-**Code mesure de courant**
+<p align="center">
+	<img width="542" alt="DMA" src="https://user-images.githubusercontent.com/94643384/214101178-c4980594-6145-4c02-a161-d55cd70b5a7d.PNG">
+
+</p>
+
+Au debut du code on intialise le DMA et l'ADC avec gestion d'erreur
+
+```
+	if(HAL_OK != HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED))
+	{
+		Error_Handler();
+	}
+
+	if(HAL_OK != HAL_ADC_Start_DMA(&hadc2, ADC_buffer, ADC_BUFFER_SIZE))
+	{
+		Error_Handler();
+	}
+
+	if(HAL_OK != HAL_TIM_Base_Start(&htim1))
+	{
+		Error_Handler();
+	}
+```
+
+Ainsi on relève 
+
+```
+			else if(strcmp(argv[0],"ValCourant")==0)
+			{
+				sprintf(uartTxBuffer,"Courant = %0.4f\r\n",mesure_Courant);
+				HAL_UART_Transmit(&huart2, uartTxBuffer, sizeof("Courant = XXXXX\r\n"), HAL_MAX_DELAY);
+			}
+
+```
 
 
 ### 7.2 Mesure de la vitesse
 
-A partir de l'encodeur du moteur, on récupère la vitesse de rotation du moteur
+A partir de l'encodeur du moteur, on récupère la vitesse de rotation du moteur. 
 
 
 **Conversion de vitesse explication**
