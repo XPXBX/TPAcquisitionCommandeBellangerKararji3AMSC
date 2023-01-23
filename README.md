@@ -472,16 +472,25 @@ Les deux signaux nous permettent de déduire le sens de rotation du moteur.
 
 On branche le cable sub-d9 sur l'encodeur du moteur et sur le connecteur de la carte mère. Les signaux sont déjà mise en forme sur la carte, il suffit de récupérer les signaux A et B qui en ressortent.
 
-On configure un timer en "encodeur mode" pour récupérer à intervalle de temps régulier la position du moteur. 
-
+On configure un timer en "encodeur mode" pour récupérer à intervalle de temps régulier la position du moteur.
 
 <p float="justify">
 	<img width="300" alt="encoder mode1" src="https://user-images.githubusercontent.com/94643384/214111028-6ec58362-9c03-4235-aa82-6d3285e519ef.PNG"><img width="300" alt="encoder mode" src="https://user-images.githubusercontent.com/94643384/214111239-ada28c7e-b16d-4b24-8a50-e7c922e7027a.PNG">
 </p>
 
+Sur le fichier main on rédige **conversion_Encoder()** qui à chaque interruption calcule le temps de passage entre deux fronts.
 
+```
+void conversion_Encoder (void)
+{
+	HAL_GPIO_TogglePin(Encoder_GPIO_Port, Encoder_Pin);
+	HAL_GPIO_TogglePin(Encoder_GPIO_Port, Encoder_Pin);
+	check_Encoder = ((((TIM2->CNT)-32767)/0.05)/4096);
+	// on remet le compteur à sa valeur max ensuite pour capter la plus faible vitesse.
+	TIM2->CNT = 32767;
+}
 
-
+```
 
 ## 8. Asservissement
 
