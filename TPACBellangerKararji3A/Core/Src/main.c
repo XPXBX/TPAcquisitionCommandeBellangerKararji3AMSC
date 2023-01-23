@@ -48,6 +48,10 @@
 #define ASCII_CR 0x0D
 // DEL = delete
 #define ASCII_DEL 0x7F
+
+
+
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -58,6 +62,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+
 uint8_t prompt[]="user@Nucleo-STM32G431>>";
 uint8_t started[]=
 		"\r\n*-----------------------------*"
@@ -82,26 +87,44 @@ uint8_t raw_Value;
 uint8_t Average_Voltage;
 uint8_t vitesse;
 uint8_t Courant;
-float MesCourant = 0;
-float EntreeCorrecteur=0;
-float commandecourant = 0;
-float CPT = 0;
-float Epsilon = 0;
+
+
+// Variables pour DMA, TIM & ADC
+float check_Encoder = 0;
+float current =0;
+
+// Variables CCR_Alpha
 int alpha;
-int Alpha1;
-int Alpha2;
+int alpha_1;
+int alpha_2;
+
+// Variables pour Asservissement courant
+float epsilon = 0;
+float mesure_Courant = 0;
+float new_Alpha = 0;
+float old_Alpha = 50;
+float Kp_Current = 10;
+float Ki_Current = 0.217;
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-int ConversionAlpha(int vitesse);
+
+
 void CCR_Alpha(int alpha);
+int conversion_Alpha(int vitesse);
+void conversion_Encoder (void);
+
 //void Enc(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+
 
 /**
  * @brief  This function is for making work printf
@@ -121,10 +144,10 @@ int __io_putchar(int ch)
  */
 void CCR_Alpha(int alpha)
 {
-	Alpha1 = (alpha*TIM1 -> ARR)/100;
-	Alpha2 = TIM1 -> ARR-Alpha1;
-	TIM1->CCR1 = Alpha1;
-	TIM1->CCR2 = Alpha2;
+	alpha_1 = (alpha*TIM1 -> ARR)/100;
+	alpha_2 = TIM1 -> ARR-alpha_1;
+	TIM1->CCR1 = alpha_1;
+	TIM1->CCR2 = alpha_2;
 	TIM1->CNT=0;
 }
 
@@ -132,7 +155,8 @@ void CCR_Alpha(int alpha)
  * @brief Configuration to start the generation of PWM
  * @retval none
  */
-void Start_PWM(void){
+void start_PWM(void)
+{
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
 	HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
@@ -143,7 +167,8 @@ void Start_PWM(void){
  * @brief Configuration to stop the generation of PWM
  * @retval none
  */
-void Stop_PWM(void){
+void stop_PWM(void)
+{
 	HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
 	HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
@@ -151,37 +176,58 @@ void Stop_PWM(void){
 }
 
 /**
- * @brief  CCR_Alpha changes the duty cycle of PWM
- * @argument alpha
+ * @brief  conversion_Alpha convertit une vitesse en une commande Alpha
+ * @argument vitese
+ * @retval valeur_Alpha
+ */
+int conversion_Alpha(int vitesse)
+{
+	int valeur_Alpha = ((vitesse + 3000)/60);
+	CCR_Alpha(valeur_Alpha);
+	return valeur_Alpha;
+}
+
+/**
+ * @brief  conversion_Encoder capte deux fronts de l'encodeur
+ * et convertit la différence de temps en un "Check" qui correspond temps de passage d'un front.
+ * @argument none
  * @retval none
  */
-int Conversion_Alpha(int vitesse)
+void conversion_Encoder (void)
 {
-	int ValeurAlpha = ((vitesse + 3000)/60);
-	CCR_Alpha(ValeurAlpha);
-	return ValeurAlpha;
-}
-
-
-/*
-void Enc(void)
-{
-	HAL_GPIO_TogglePin(ENC_GPIO_Port, ENC_Pin);
-	HAL_GPIO_TogglePin(ENC_GPIO_Port, ENC_Pin);
-	CPT = ((((TIM2->CNT)-32767)/0.05)/4096);
+	HAL_GPIO_TogglePin(Encoder_GPIO_Port, Encoder_Pin);
+	HAL_GPIO_TogglePin(Encoder_GPIO_Port, Encoder_Pin);
+	check_Encoder = ((((TIM2->CNT)-32767)/0.05)/4096);
+	// on remet le compteur à sa valeur max ensuite pour capter la plus faible vitesse.
 	TIM2->CNT = 32767;
 }
-*/
 
-
-int Asservissement_courant(float commandecourant){
-	Epsilon = commandecourant - MesCourant;
-
+/**
+ * @brief  asservissement_Courant transforme une commande de courant en une commande alpha
+ * @argument commandecourant
+ * @retval none
+ */
+void asservissement_Courant(float commandecourant)
+{
+	epsilon = commandecourant - mesure_Courant;
+	new_Alpha = Kp_Current*epsilon + Ki_Current*(old_Alpha + epsilon);
+	// anti-Windup
+	if (new_Alpha > 100)
+	{
+		new_Alpha = 100;
+	}
+	else if (new_Alpha < -100)
+	{
+		new_Alpha = -100;
+	}
+	else
+	{
+		new_Alpha = old_Alpha;
+	}
+	CCR_Alpha(new_Alpha);
 }
 
-float Correcteur_PI(float EntreeCorrecteur){
 
-}
 /* USER CODE END 0 */
 
 /**
@@ -191,10 +237,10 @@ float Correcteur_PI(float EntreeCorrecteur){
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+
+	// Variables locales pour SHELL
 	char	 	cmdBuffer[CMD_BUFFER_SIZE];
 	int 		idx_cmd;
-	int			Start;
-	int 		AntiStart;
 	char* 		argv[MAX_ARGS];
 	int		 	argc = 0;
 	char*		token;
@@ -235,9 +281,17 @@ int main(void)
 	HAL_Delay(10);
 	HAL_UART_Transmit(&huart2, started, sizeof(started), HAL_MAX_DELAY);
 	HAL_UART_Transmit(&huart2, prompt, sizeof(prompt), HAL_MAX_DELAY);
-	HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
-	HAL_TIM_Base_Start_IT(&htim3);
 
+
+	if (HAL_OK != HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL))
+	{
+		Error_Handler();
+	}
+
+	if (HAL_OK != HAL_TIM_Base_Start_IT(&htim3))
+	{
+		Error_Handler();
+	}
 
 	if(HAL_OK != HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED))
 	{
@@ -353,7 +407,7 @@ int main(void)
 			else if(strcmp(argv[0],"start")==0)
 			{
 
-				Start_PWM();
+				start_PWM();
 				CCR_Alpha(50);
 
 			}
@@ -367,27 +421,9 @@ int main(void)
 			else if(strcmp(argv[0],"stop")==0)
 			{
 
-				Stop_PWM();
+				stop_PWM();
 
 			}
-
-			/*else if(strcmp(argv[0],"adc")==0)
-			   {
-				if(1==flag)
-				{
-					raw_Value = 0;
-					for (idx=0;idx< ADC_BUFFER_SIZE;idx++)
-					{
-						raw_Value = raw_Value + ADC_buffer[idx];
-					}
-					Average_Voltage = raw_Value/ADC_BUFFER_SIZE;
-					sprintf(uartTxBuffer,"Raw est lu");
-					HAL_UART_Transmit(&huart2, uartRxBuffer, UART_RX_BUFFER_SIZE, HAL_MAX_DELAY);
-
-					flag=0;
-
-				}
-			   }*/
 
 
 			else if(strcmp(argv[0],"adc")==0)
@@ -427,7 +463,7 @@ int main(void)
 				sprintf(uartTxBuffer,"La vitesse sera reglee sur %d RPM \r\n", speed);
 				HAL_UART_Transmit(&huart2, uartTxBuffer, 64, HAL_MAX_DELAY);
 				HAL_Delay(10);
-				int NewAlpha = Conversion_Alpha(speed);
+				int NewAlpha = conversion_Alpha(speed);
 				sprintf(uartTxBuffer,"Alpha = %d\r\n", NewAlpha);
 				HAL_UART_Transmit(&huart2, uartTxBuffer, 64, HAL_MAX_DELAY);
 			}
@@ -443,14 +479,14 @@ int main(void)
 
 			else if(strcmp(argv[0],"ValCourant")==0)
 			{
-				sprintf(uartTxBuffer,"Courant = %0.4f\r\n",MesCourant);
+				sprintf(uartTxBuffer,"Courant = %0.4f\r\n",mesure_Courant);
 				HAL_UART_Transmit(&huart2, uartTxBuffer, sizeof("Courant = XXXXX\r\n"), HAL_MAX_DELAY);
 			}
 
 
 			else if(strcmp(argv[0], "Encodeur")==0)
 			{
-				sprintf(uartTxBuffer,"encodeur = %f",CPT);
+				sprintf(uartTxBuffer,"encodeur = %f",check_Encoder);
 				HAL_UART_Transmit(&huart2, uartTxBuffer, sizeof(uartTxBuffer), HAL_MAX_DELAY);
 			}
 
@@ -532,7 +568,7 @@ void HAL_ADC_ConvCpltCallBack(ADC_HandleTypeDef* hadc)
 		Imoy = Imoy + (float)tab[i];
 	}
 	Imoy = Imoy/NMOY;
-	courant = ((Imoy-3100)/4096)*(12*3.3)-0.3;
+	mesure_Courant = ((Imoy-3100)/4096)*(12*3.3)-0.3;
 }
 
 
