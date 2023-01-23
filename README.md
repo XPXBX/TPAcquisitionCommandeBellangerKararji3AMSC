@@ -464,10 +464,21 @@ Ainsi on relève
 
 A partir de l'encodeur du moteur, on récupère la vitesse de rotation du moteur. 
 
+<p align="center">
+<img width="360" alt="rouecodeuse" src="https://user-images.githubusercontent.com/94643384/214106890-7b9bccfc-6841-4703-8d4b-5fb725c31956.PNG">
+</p>
 
-**Conversion de vitesse explication**
+Les deux signaux nous permettent de déduire le sens de rotation du moteur. 
 
-**Code mesure vitesse**
+On branche le cable sub-d9 sur l'encodeur du moteur et sur le connecteur de la carte mère. Les signaux sont déjà mise en forme sur la carte, il suffit de récupérer les signaux A et B qui en ressortent.
+
+On configure un timer en "encodeur mode" pour récupérer à intervalle de temps régulier la position du moteur. 
+
+
+<p float="justify">
+	<img width="300" alt="encoder mode1" src="https://user-images.githubusercontent.com/94643384/214111028-6ec58362-9c03-4235-aa82-6d3285e519ef.PNG"><img width="300" alt="encoder mode" src="https://user-images.githubusercontent.com/94643384/214111239-ada28c7e-b16d-4b24-8a50-e7c922e7027a.PNG">
+</p>
+
 
 
 ## 8. Asservissement
